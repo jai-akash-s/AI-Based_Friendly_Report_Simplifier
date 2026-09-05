@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="theme-color" content="#0b3954">
+	<title>{% block title %}AI-Based Friendly Report Simplifier{% endblock %}</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+	<script src="https://unpkg.com/lucide@latest"></script>
+	{% block head %}{% endblock %}
+</head>
+	<body class="{% if request.path in ['/', '/login', '/register'] %}auth-page-body{% endif %}">
+	{% if request.path not in ['/', '/login', '/register'] %}
+	<header class="site-header">
+		<div class="nav-wrap">
+			<a href="/dashboard" class="brand" aria-label="AI-Based Friendly Report Simplifier dashboard">
+				<span class="brand-mark"><i data-lucide="sparkles"></i></span>
+				<span><strong>AI Report Simplifier</strong><small>Friendly health clarity</small></span>
+			</a>
+			<button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-menu-toggle><i data-lucide="menu"></i></button>
+			<nav class="site-nav" data-site-nav>
+				<a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}"><i data-lucide="house"></i> Home</a>
+				<a href="/dashboard#upload"><i data-lucide="upload-cloud"></i> Upload report</a>
+				<a href="/reports" class="{% if request.path.startswith('/reports') %}active{% endif %}"><i data-lucide="files"></i> My reports</a>
+				<a href="/patients/add" class="{% if request.path == '/patients/add' %}active{% endif %}"><i data-lucide="user-round-plus"></i> Add patient</a>
+			</nav>
+			<div class="user-nav"><span class="user-avatar"><i data-lucide="user-round"></i></span><span class="user-email">{{ session.get('user_email', 'Workspace user') }}</span><form action="/logout" method="POST"><button class="logout-button" type="submit">Log out <i data-lucide="log-out"></i></button></form></div>
+		</div>
+	</header>
+	{% endif %}
+	<div class="processing-screen" data-processing-screen aria-hidden="true">
+		<div class="processing-card"><span class="processing-icon"><i data-lucide="sparkles"></i></span><div class="eyebrow">AI Report Simplifier</div><h2>Analyzing your report...</h2><p>We’re reading the report and preparing a clearer view.</p><ol class="processing-steps"><li class="complete"><i data-lucide="check"></i> Reading medical report</li><li class="complete"><i data-lucide="check"></i> Extracting important information</li><li class="current"><i data-lucide="loader-circle"></i> Understanding medical terms</li><li><i data-lucide="circle"></i> Simplifying the results</li><li><i data-lucide="circle"></i> Preparing your report</li></ol></div>
+	</div>
+	<main>{% block content %}{% endblock %}</main>
+	{% if request.path not in ['/', '/login', '/register'] %}<footer class="site-footer">
+		<div class="footer-wrap"><span class="footer-brand">AI-Based Friendly Report Simplifier</span><span>Clear explanations for better conversations with your care team.</span><span class="footer-note"><i data-lucide="shield-check"></i> Educational use only</span></div>
+	</footer>{% endif %}
+	<script>document.addEventListener('DOMContentLoaded', function () { if (window.lucide) lucide.createIcons(); });</script>
+	<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+	{% block scripts %}{% endblock %}
+</body>
+</html>

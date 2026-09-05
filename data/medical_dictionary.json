@@ -1,0 +1,333 @@
+{
+  "diseases": {
+    "hypertension": "High blood pressure — your heart is working harder than it should to pump blood.",
+    "diabetes mellitus": "A condition where your body has trouble controlling blood sugar levels.",
+    "myocardial infarction": "A heart attack — part of the heart muscle isn't getting enough blood.",
+    "hyperlipidemia": "High levels of fat (cholesterol) in your blood.",
+    "anemia": "Your blood doesn't have enough healthy red blood cells to carry oxygen well.",
+    "pneumonia": "An infection that inflames the air sacs in one or both lungs.",
+    "hypothyroidism": "Your thyroid gland isn't making enough hormone, which can slow down your body.",
+    "hyperthyroidism": "Your thyroid gland is making too much hormone, speeding up your body's processes.",
+    "osteoarthritis": "Wear-and-tear damage to joint cartilage, causing pain and stiffness.",
+    "chronic kidney disease": "Your kidneys are gradually losing their ability to filter waste from your blood."
+  },
+  "medicines": {
+    "metformin": "A common medicine to help control blood sugar in diabetes.",
+    "atorvastatin": "A medicine that lowers cholesterol levels in the blood.",
+    "amlodipine": "A medicine that relaxes blood vessels to lower blood pressure.",
+    "levothyroxine": "A medicine that replaces thyroid hormone your body isn't making enough of.",
+    "paracetamol": "A common pain reliever and fever reducer.",
+    "aspirin": "A medicine used to reduce pain, fever, and to help prevent blood clots.",
+    "omeprazole": "A medicine that reduces stomach acid, used for acid reflux or ulcers."
+  },
+  "lab_terms": {
+    "hba1c": "A test showing your average blood sugar level over the past 2-3 months.",
+    "creatinine": "A waste product filtered by your kidneys — high levels can mean your kidneys aren't filtering well.",
+    "hemoglobin": "The protein in red blood cells that carries oxygen around your body.",
+    "ldl": "'Bad' cholesterol — high levels can build up in your arteries.",
+    "hdl": "'Good' cholesterol — helps remove bad cholesterol from your blood.",
+    "tsh": "Thyroid Stimulating Hormone — tells your thyroid gland how much hormone to make.",
+    "wbc count": "White Blood Cell count — measures cells that fight infection.",
+    "platelet count": "Measures cells in your blood that help it clot and stop bleeding.",
+    "bilirubin": "A substance made when red blood cells break down — high levels can indicate liver issues.",
+    "esr": "Erythrocyte Sedimentation Rate — a test that can show inflammation somewhere in the body."
+  },
+  "recommendations": {
+    "hypertension": {
+      "foods_to_eat": [
+        "Leafy greens (spinach, kale) rich in potassium",
+        "Berries (blueberries, strawberries) high in flavonoids",
+        "Oats and whole grains",
+        "Bananas, avocados, and garlic"
+      ],
+      "foods_to_avoid": [
+        "High-sodium processed foods and table salt",
+        "Canned soups and salty snacks",
+        "Red meat and high-saturated-fat dairy",
+        "Excessive caffeine and sugary beverages"
+      ],
+      "recommended_exercise": [
+        "30 minutes of moderate aerobic exercise (brisk walking, cycling, or swimming) 5 days a week",
+        "Light resistance or weight training 2 days a week"
+      ],
+      "exercise_precautions": "Avoid sudden heavy weightlifting that causes intense straining."
+    },
+    "diabetes mellitus": {
+      "foods_to_eat": [
+        "Non-starchy vegetables (broccoli, asparagus, peppers)",
+        "High-fiber foods (beans, lentils, chia seeds)",
+        "Lean proteins (chicken breast, fish, tofu)",
+        "Complex carbs with low glycemic index (quinoa, brown rice)"
+      ],
+      "foods_to_avoid": [
+        "Refined sugars, candy, and pastries",
+        "Sugary sodas and fruit juices",
+        "White bread, white rice, and refined flour products",
+        "Deep-fried foods and trans fats"
+      ],
+      "recommended_exercise": [
+        "150 minutes per week of moderate-intensity aerobic exercise (walking, water aerobics)",
+        "Post-meal 10-15 minute short walks to help lower glucose spikes"
+      ],
+      "exercise_precautions": "Check blood sugar before intense workouts and carry a fast-acting carb source."
+    },
+    "hba1c": {
+      "foods_to_eat": [
+        "Fiber-rich vegetables and legumes to stabilize blood glucose",
+        "Whole, unprocessed grains and seeds"
+      ],
+      "foods_to_avoid": [
+        "Simple carbohydrates and added sugars",
+        "Processed snacks and sweetened drinks"
+      ],
+      "recommended_exercise": [
+        "Regular daily walking or moderate cardiovascular exercise to improve insulin sensitivity"
+      ],
+      "exercise_precautions": "Stay hydrated and monitor blood sugar levels."
+    },
+    "hyperlipidemia": {
+      "foods_to_eat": [
+        "Soluble fiber foods (oatmeal, kidney beans, Brussels sprouts)",
+        "Omega-3 rich foods (salmon, mackerel, walnuts, flaxseeds)",
+        "Olive oil and avocados"
+      ],
+      "foods_to_avoid": [
+        "Saturated fats (butter, lard, full-fat cheese)",
+        "Trans fats and commercially baked goods",
+        "Organ meats and high-cholesterol processed meats"
+      ],
+      "recommended_exercise": [
+        "At least 30 minutes of aerobic exercise (brisk walking, jogging, cycling) 5 times a week to boost HDL ('good' cholesterol)"
+      ],
+      "exercise_precautions": "Build intensity gradually if new to cardiovascular exercise."
+    },
+    "ldl": {
+      "foods_to_eat": [
+        "Oats, barley, apples, and almonds to lower bad cholesterol",
+        "Plant sterol-enriched foods and olive oil"
+      ],
+      "foods_to_avoid": [
+        "Fried foods, palm oil, butter, and processed meats"
+      ],
+      "recommended_exercise": [
+        "Brisk walking, jogging, or cycling for 30-45 minutes regularly"
+      ],
+      "exercise_precautions": "Maintain consistency for best lipid-lowering results."
+    },
+    "anemia": {
+      "foods_to_eat": [
+        "Iron-rich foods (spinach, lentils, beans, fortified cereals, lean red meat)",
+        "Vitamin C rich foods (citrus fruits, bell peppers) to boost iron absorption"
+      ],
+      "foods_to_avoid": [
+        "Drinking tea or coffee directly with meals (tannins reduce iron absorption)",
+        "Excessive calcium supplements right alongside iron-rich meals"
+      ],
+      "recommended_exercise": [
+        "Low-to-moderate intensity activities like walking, yoga, and gentle stretching"
+      ],
+      "exercise_precautions": "Rest whenever feeling dizzy or fatigued; avoid overexertion until iron levels normalize."
+    },
+    "hemoglobin": {
+      "foods_to_eat": [
+        "Dark leafy greens, beetroot, dates, raisins, and iron-fortified foods",
+        "Oranges and strawberries to enhance iron absorption"
+      ],
+      "foods_to_avoid": [
+        "Calcium-rich foods at the exact same time as iron foods"
+      ],
+      "recommended_exercise": [
+        "Light physical activity like walking or restorative yoga"
+      ],
+      "exercise_precautions": "Listen to your body and avoid exhaustion."
+    },
+    "chronic kidney disease": {
+      "foods_to_eat": [
+        "Kidney-friendly proteins (egg whites, fish, poultry in moderate portions)",
+        "Lower-potassium fruits (apples, berries, grapes) if advised by doctor",
+        "Cauliflower, cabbage, and red bell peppers"
+      ],
+      "foods_to_avoid": [
+        "High-sodium foods and added salt",
+        "Processed meats and foods with added phosphorus additives",
+        "High-potassium foods (bananas, oranges, potatoes) if restricted"
+      ],
+      "recommended_exercise": [
+        "Gentle aerobic exercise (walking, stationary cycling, light stretching) 3-4 days a week"
+      ],
+      "exercise_precautions": "Consult your nephrologist before starting new routines, avoid heavy straining."
+    },
+    "creatinine": {
+      "foods_to_eat": [
+        "Plant-based protein sources, fresh vegetables, and adequate water"
+      ],
+      "foods_to_avoid": [
+        "Excessive cooked red meat (contains cooked creatine)",
+        "Creatine supplements and high-sodium meals"
+      ],
+      "recommended_exercise": [
+        "Moderate, regular activity like walking or light cycling"
+      ],
+      "exercise_precautions": "Avoid extreme strenuous physical exertion right before lab tests."
+    },
+    "osteoarthritis": {
+      "foods_to_eat": [
+        "Anti-inflammatory foods (fatty fish, olive oil, cherries, green tea)",
+        "Calcium and Vitamin D rich foods (fortified milk, leafy greens)"
+      ],
+      "foods_to_avoid": [
+        "Refined sugars and fried foods that promote systemic inflammation",
+        "Excessive alcohol"
+      ],
+      "recommended_exercise": [
+        "Low-impact joint-friendly exercises (swimming, water aerobics, cycling, walking)",
+        "Strength training to support muscles around joints"
+      ],
+      "exercise_precautions": "Avoid high-impact pounding exercises (like running on hard pavement) if joint pain flares up."
+    },
+    "hypothyroidism": {
+      "foods_to_eat": [
+        "Selenium-rich foods (Brazil nuts, eggs, legumes)",
+        "Iodine and zinc-containing balanced meals",
+        "High-fiber foods to aid digestion"
+      ],
+      "foods_to_avoid": [
+        "Excess raw cruciferous vegetables (cabbage, broccoli) in very large quantities",
+        "Highly processed foods and soy right when taking thyroid medication"
+      ],
+      "recommended_exercise": [
+        "Low-impact aerobic exercise combined with strength training to boost metabolism"
+      ],
+      "exercise_precautions": "Pace yourself to manage fatigue."
+    },
+    "myocardial infarction": {
+      "foods_to_eat": [
+        "Heart-healthy Mediterranean diet (olive oil, fish, vegetables, berries)",
+        "High-fiber whole grains (oatmeal, brown rice)"
+      ],
+      "foods_to_avoid": [
+        "High-saturated fats, trans fats, and fried foods",
+        "Sodium/salt and processed meats",
+        "Sugary drinks and alcohol"
+      ],
+      "recommended_exercise": [
+        "Physician-supervised cardiac rehabilitation program",
+        "Light walking (10-15 minutes daily) gradually increasing as approved by doctor"
+      ],
+      "exercise_precautions": "CRITICAL: Stop exercise immediately if experiencing chest tightness, breathlessness, or dizziness."
+    },
+    "pneumonia": {
+      "foods_to_eat": [
+        "Warm fluids (broths, herbal teas, warm water with lemon) for hydration",
+        "Protein-dense foods (eggs, poultry, yogurt) to repair tissue",
+        "Vitamin C rich fruits (oranges, berries, kiwi)"
+      ],
+      "foods_to_avoid": [
+        "Cold dairy products if they increase mucus sensation",
+        "Processed foods, heavy fried foods, and refined sugar"
+      ],
+      "recommended_exercise": [
+        "Deep breathing exercises (diaphragmatic breathing) and light indoor walking",
+        "Adequate rest — avoid moderate/strenuous exercise while recovering"
+      ],
+      "exercise_precautions": "Avoid heavy physical exertion until lung infection and fever have completely cleared."
+    },
+    "hyperthyroidism": {
+      "foods_to_eat": [
+        "Cruciferous vegetables (broccoli, Brussels sprouts, cabbage)",
+        "Calcium and Vitamin D rich foods",
+        "Healthy fats (nuts, seeds, olive oil)"
+      ],
+      "foods_to_avoid": [
+        "Excessive iodine (seaweed, kelp, iodized salt in large amounts)",
+        "Caffeine, energy drinks, and stimulants",
+        "Excessive gluten if sensitive"
+      ],
+      "recommended_exercise": [
+        "Weight-bearing exercises (walking, bodyweight squats) to preserve bone density",
+        "Calming exercises like yoga or Pilates"
+      ],
+      "exercise_precautions": "Monitor heart rate and avoid strenuous workouts if experiencing tachycardia (fast heart rate)."
+    },
+    "hdl": {
+      "foods_to_eat": [
+        "Healthy fats (avocados, olive oil, almonds, walnuts)",
+        "Fatty fish rich in Omega-3 (salmon, mackerel, sardines)",
+        "High-fiber beans and legumes"
+      ],
+      "foods_to_avoid": [
+        "Trans fats and hydrogenated oils",
+        "Refined carbohydrates and sugary snacks"
+      ],
+      "recommended_exercise": [
+        "Vigorous or moderate aerobic activity (brisk walking, running, swimming) for 30 minutes 5 days a week"
+      ],
+      "exercise_precautions": "Consistency is key to elevating good HDL cholesterol levels."
+    },
+    "tsh": {
+      "foods_to_eat": [
+        "Balanced whole food meals with adequate selenium, zinc, and iodine"
+      ],
+      "foods_to_avoid": [
+        "Highly processed foods, excessive soy, and caffeine near medication time"
+      ],
+      "recommended_exercise": [
+        "30 minutes of regular moderate exercise (walking, cycling) to support metabolic health"
+      ],
+      "exercise_precautions": "Adjust exercise intensity based on current energy and thyroid hormone levels."
+    },
+    "wbc count": {
+      "foods_to_eat": [
+        "Immune-supporting foods rich in Vitamin C, zinc, and antioxidants (citrus, garlic, ginger, spinach, yogurt)"
+      ],
+      "foods_to_avoid": [
+        "Raw or undercooked meats/eggs (to prevent infection risk if WBC is low)",
+        "Unpasteurized dairy and unwashed raw produce"
+      ],
+      "recommended_exercise": [
+        "Light to moderate physical activity (daily walking, stretching)"
+      ],
+      "exercise_precautions": "Avoid overcrowded public spaces or intense workouts during active infection or low immune status."
+    },
+    "platelet count": {
+      "foods_to_eat": [
+        "Folate-rich foods (dark leafy greens, lentils, oranges)",
+        "Vitamin K rich foods (kale, spinach, broccoli) if advised by physician"
+      ],
+      "foods_to_avoid": [
+        "Alcohol and tonic water (quinine can affect platelets)",
+        "Excessive cranberry juice or omega-3 megadoses without doctor advice"
+      ],
+      "recommended_exercise": [
+        "Low-impact non-contact activities (walking, swimming, light elliptical)"
+      ],
+      "exercise_precautions": "Avoid high-contact sports or activities with high risk of bruising/bleeding if platelets are low."
+    },
+    "bilirubin": {
+      "foods_to_eat": [
+        "Hydrating fluids, high-fiber fruits, vegetables, and whole grains",
+        "Lean protein (poultry, tofu, white fish)"
+      ],
+      "foods_to_avoid": [
+        "Alcohol completely",
+        "High-fat, fried, and heavily spiced foods that strain the liver"
+      ],
+      "recommended_exercise": [
+        "Light physical activity like short walks and gentle stretching"
+      ],
+      "exercise_precautions": "Rest adequately and avoid strenuous exercise if experiencing fatigue or liver inflammation."
+    },
+    "esr": {
+      "foods_to_eat": [
+        "Anti-inflammatory diet (berries, leafy greens, fatty fish, turmeric, ginger, walnuts)"
+      ],
+      "foods_to_avoid": [
+        "Refined sugars, fried foods, processed red meats, and artificial additives"
+      ],
+      "recommended_exercise": [
+        "Low-impact exercise like swimming, water aerobics, or walking to reduce inflammation"
+      ],
+      "exercise_precautions": "Do not overexert during acute inflammation flare-ups."
+    }
+  }
+}
