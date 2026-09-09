@@ -21,9 +21,6 @@ import json
 import re
 from pathlib import Path
 
-import spacy
-from spacy.pipeline import EntityRuler  # noqa: F401 (kept for clarity/reference)
-
 BASE_DIR = Path(__file__).resolve().parents[1]
 DICT_PATH = BASE_DIR / "data" / "medical_dictionary.json"
 
@@ -41,21 +38,16 @@ def load_dictionary():
         return json.load(f)
 
 def build_nlp():
-    """Builds a spaCy pipeline with a custom EntityRuler loaded from our dictionary."""
-    nlp = spacy.blank("en")  # blank pipeline: fast, we don't need the full model just to match phrases
-    ruler = nlp.add_pipe("entity_ruler")
-
+    """Build a lightweight dictionary matcher without native NLP dependencies."""
     dictionary = load_dictionary()
     patterns = []
     for category, label in LABEL_MAP.items():
         terms = dictionary.get(category, {})
         for term in terms.keys():
-            patterns.append({"label": label, "pattern": term})
-            # Also match a capitalized version (e.g. "Hba1c" vs "hba1c")
-            patterns.append({"label": label, "pattern": term.title()})
-
-    ruler.add_patterns(patterns)
-    return nlp
+            patterns.append((term, label))
+    patterns.sort(key=lambda item: len(item[0]), reverse=True)
+    expression = "|".join(re.escape(term) for term, _ in patterns)
+    return re.compile(rf"(?<!\w)({expression})(?!\w)", re.IGNORECASE), patterns
 
 
 def extract_entities(text: str, nlp=None):
@@ -66,14 +58,17 @@ def extract_entities(text: str, nlp=None):
     if nlp is None:
         nlp = build_nlp()
 
-    doc = nlp(text.lower())  # lowercase so matching isn't case-sensitive
+    matcher, patterns = nlp
     seen = set()
     results = []
-    for ent in doc.ents:
-        key = (ent.text.strip(), ent.label_)
+    labels = {term.lower(): label for term, label in patterns}
+    for match in matcher.finditer(text):
+        entity_text = match.group(1).strip()
+        label = labels[entity_text.lower()]
+        key = (entity_text.lower(), label)
         if key not in seen:
             seen.add(key)
-            results.append({"text": ent.text.strip(), "label": ent.label_})
+            results.append({"text": entity_text, "label": label})
     return results
 
 

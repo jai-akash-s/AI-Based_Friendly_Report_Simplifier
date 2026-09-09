@@ -18,10 +18,24 @@ def generate_patient_code():
     return f"PAT-{year}-{random_str}"
 
 
+class User(db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    display_name = db.Column(db.String(120), nullable=True)
+    provider = db.Column(db.String(30), nullable=False, default="local")
+    created_at = db.Column(db.DateTime, default=utc_now)
+
+    patients = db.relationship("Patient", backref="owner", lazy=True)
+    reports = db.relationship("MedicalReport", backref="owner", lazy=True)
+
+
 class Patient(db.Model):
     __tablename__ = "patients"
 
     id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
     patient_code = db.Column(
         db.String(30), unique=True, nullable=False, index=True, default=generate_patient_code
     )
@@ -59,6 +73,7 @@ class MedicalReport(db.Model):
     __tablename__ = "medical_reports"
 
     id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
     patient_id = db.Column(db.Integer, db.ForeignKey("patients.id"), nullable=True)
     filename = db.Column(db.String(255), nullable=True)
     file_path = db.Column(db.String(500), nullable=True)

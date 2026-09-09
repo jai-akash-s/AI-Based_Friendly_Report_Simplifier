@@ -21,7 +21,7 @@ and fall back to OCR for that page.
 
 from pathlib import Path
 
-import fitz  # PyMuPDF, used to rasterize PDF pages for OCR
+import pymupdf as fitz  # PyMuPDF, used to rasterize PDF pages for OCR
 import pdfplumber
 import pytesseract
 from PIL import Image

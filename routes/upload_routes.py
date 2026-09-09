@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, current_app
+from flask import Blueprint, jsonify, render_template, request, current_app
 from werkzeug.utils import secure_filename
 import os
 
@@ -6,7 +6,7 @@ from core.extractor import extract_text
 from core.simplifier import simplify_report
 from core.patient_extractor import extract_patient_info
 from database.models import db, Patient, MedicalReport, MedicalEntity, Recommendation
-from routes.auth_routes import login_required
+from routes.auth_routes import get_current_user, login_required
 
 upload_bp = Blueprint("upload", __name__)
 
@@ -14,13 +14,16 @@ upload_bp = Blueprint("upload", __name__)
 @upload_bp.route("/dashboard", methods=["GET"])
 @login_required
 def home():
-    patients = Patient.query.order_by(Patient.full_name.asc()).all()
+    user = get_current_user()
+    patients = Patient.query.filter_by(owner_id=user.id).order_by(Patient.full_name.asc()).all()
     return render_template("index.html", patients=patients)
 
 
 @upload_bp.route("/upload", methods=["POST"])
+@upload_bp.route("/api/upload", methods=["POST"])
 @login_required
 def upload():
+    user = get_current_user()
     file = request.files.get("report")
     report_text = request.form.get("report_text", "").strip()
     selected_patient_id = request.form.get("patient_id", type=int)
@@ -64,7 +67,9 @@ def upload():
     # Nothing supplied
     # -----------------------------
     else:
-        patients = Patient.query.order_by(Patient.full_name.asc()).all()
+        patients = Patient.query.filter_by(owner_id=user.id).order_by(Patient.full_name.asc()).all()
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Please upload a PDF/Image or paste report text."}), 400
         return render_template(
             "index.html",
             patients=patients,
@@ -89,7 +94,7 @@ def upload():
     try:
         # Step 1: Check if an existing patient was selected in dropdown
         if selected_patient_id:
-            target_patient = db.session.get(Patient, selected_patient_id)
+            target_patient = Patient.query.filter_by(id=selected_patient_id, owner_id=user.id).first()
 
         # Step 2: If no patient selected, look up by name or phone in database
         if not target_patient and patient_name:
@@ -106,6 +111,7 @@ def upload():
         if not target_patient:
             final_name = patient_name if patient_name else "Patient Record"
             target_patient = Patient(
+                owner_id=user.id,
                 full_name=final_name,
                 age=patient_age,
                 gender=patient_gender,
@@ -133,6 +139,7 @@ def upload():
 
         # Step 4: Save Medical Report record linked to target_patient
         report_record = MedicalReport(
+            owner_id=user.id,
             patient_id=target_patient.id,
             filename=saved_filename,
             file_path=saved_filepath,
@@ -171,7 +178,14 @@ def upload():
         current_app.logger.error(f"Error saving patient/report to database: {e}")
         result = simplify_report(text)
 
-    patients = Patient.query.order_by(Patient.full_name.asc()).all()
+    patients = Patient.query.filter_by(owner_id=user.id).order_by(Patient.full_name.asc()).all()
+
+    if request.path.startswith("/api/"):
+        return jsonify({
+            "result": result,
+            "patient": target_patient.to_dict() if target_patient else None,
+            "report": report_record.to_dict() if "report_record" in locals() else None,
+        })
 
     return render_template(
         "results.html",

@@ -35,9 +35,6 @@
 		<div class="processing-card"><span class="processing-icon"><i data-lucide="sparkles"></i></span><div class="eyebrow">AI Report Simplifier</div><h2>Analyzing your report...</h2><p>We’re reading the report and preparing a clearer view.</p><ol class="processing-steps"><li class="complete"><i data-lucide="check"></i> Reading medical report</li><li class="complete"><i data-lucide="check"></i> Extracting important information</li><li class="current"><i data-lucide="loader-circle"></i> Understanding medical terms</li><li><i data-lucide="circle"></i> Simplifying the results</li><li><i data-lucide="circle"></i> Preparing your report</li></ol></div>
 	</div>
 	<main>{% block content %}{% endblock %}</main>
-	{% if request.path not in ['/', '/login', '/register'] %}<footer class="site-footer">
-		<div class="footer-wrap"><span class="footer-brand">AI-Based Friendly Report Simplifier</span><span>Clear explanations for better conversations with your care team.</span><span class="footer-note"><i data-lucide="shield-check"></i> Educational use only</span></div>
-	</footer>{% endif %}
 	<script>document.addEventListener('DOMContentLoaded', function () { if (window.lucide) lucide.createIcons(); });</script>
 	<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
 	{% block scripts %}{% endblock %}
