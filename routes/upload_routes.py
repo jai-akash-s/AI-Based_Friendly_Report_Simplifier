@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, render_template, request, current_app
 from werkzeug.utils import secure_filename
 import os
 
-from core.extractor import extract_text
+from core.extractor import OCRNotAvailableError, extract_text
 from core.simplifier import simplify_report
 from core.patient_extractor import extract_patient_info
 from database.models import db, Patient, MedicalReport, MedicalEntity, Recommendation
@@ -54,7 +54,15 @@ def upload():
         saved_filename = filename
         saved_filepath = filepath
 
-        extracted = extract_text(filepath)
+        try:
+            extracted = extract_text(filepath)
+        except OCRNotAvailableError as error:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            patients = Patient.query.filter_by(owner_id=user.id).order_by(Patient.full_name.asc()).all()
+            if request.path.startswith("/api/"):
+                return jsonify({"error": str(error)}), 503
+            return render_template("index.html", patients=patients, error=str(error)), 503
         text = extracted["text"]
 
     # -----------------------------

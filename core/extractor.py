@@ -20,15 +20,35 @@ and fall back to OCR for that page.
 """
 
 from pathlib import Path
+import os
 
 import pymupdf as fitz  # PyMuPDF, used to rasterize PDF pages for OCR
 import pdfplumber
 import pytesseract
+from pytesseract.pytesseract import TesseractNotFoundError
 from PIL import Image
 
 # If a page has fewer than this many characters of extractable text,
 # we treat it as "scanned" and run OCR instead.
 MIN_CHARS_FOR_DIGITAL_PAGE = 20
+
+
+class OCRNotAvailableError(RuntimeError):
+    """Raised when the native Tesseract executable cannot be started."""
+
+
+configured_tesseract_cmd = os.environ.get("TESSERACT_CMD")
+if configured_tesseract_cmd:
+    pytesseract.pytesseract.tesseract_cmd = configured_tesseract_cmd
+
+
+def _run_ocr(image: Image.Image) -> str:
+    try:
+        return pytesseract.image_to_string(image)
+    except TesseractNotFoundError as error:
+        raise OCRNotAvailableError(
+            "Image OCR requires Tesseract. Install Tesseract or set TESSERACT_CMD to its executable path."
+        ) from error
 
 
 def _ocr_page_with_pymupdf(pdf_path: str, page_number: int, zoom: float = 2.0) -> str:
@@ -41,7 +61,7 @@ def _ocr_page_with_pymupdf(pdf_path: str, page_number: int, zoom: float = 2.0) -
     pix = page.get_pixmap(matrix=matrix)
     img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
     doc.close()
-    return pytesseract.image_to_string(img)
+    return _run_ocr(img)
 
 
 def extract_text_from_pdf(pdf_path: str) -> dict:
@@ -74,7 +94,7 @@ def extract_text_from_pdf(pdf_path: str) -> dict:
 def extract_text_from_image(image_path: str) -> dict:
     """For when the user uploads a raw image (JPG/PNG) instead of a PDF."""
     img = Image.open(image_path)
-    text = pytesseract.image_to_string(img).strip()
+    text = _run_ocr(img).strip()
     return {"text": text, "pages": [{"page": 1, "method": "ocr", "text": text}]}
 
 
