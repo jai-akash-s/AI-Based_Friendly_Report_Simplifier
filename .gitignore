@@ -23,3 +23,4 @@ frontend/dist/
 # Generated files
 *.pdf
 uploads/*
+node_modules
