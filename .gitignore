@@ -22,3 +22,4 @@ frontend/dist/
 
 # Generated files
 *.pdf
+uploads/*
