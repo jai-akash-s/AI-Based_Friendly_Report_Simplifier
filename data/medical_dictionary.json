@@ -37,7 +37,11 @@
     "wbc count": "White Blood Cell count — measures cells that fight infection.",
     "platelet count": "Measures cells in your blood that help it clot and stop bleeding.",
     "bilirubin": "A substance made when red blood cells break down — high levels can indicate liver issues.",
-    "esr": "Erythrocyte Sedimentation Rate — a test that can show inflammation somewhere in the body."
+    "esr": "Erythrocyte Sedimentation Rate — a test that can show inflammation somewhere in the body.",
+    "bp": "Blood pressure — the force of blood moving through your blood vessels.",
+    "bmi": "Body Mass Index — a screening measure comparing weight with height.",
+    "ecg": "Electrocardiogram — a test that records the heart's electrical activity.",
+    "cbc": "Complete Blood Count — a group of tests measuring blood cells."
   },
   "recommendations": {
     "hypertension": {

@@ -19,6 +19,7 @@ venv/
 # React build output and dependencies
 frontend/node_modules/
 frontend/dist/
+frontend/test-results/
 
 # Generated files
 *.pdf
