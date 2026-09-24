@@ -1,83 +1,20 @@
 # AI-Based Friendly Report Simplifier
 
-An AI-assisted Flask application that extracts medical report text, identifies important entities, and presents clearer explanations and recommendations.
+A full-stack AI-assisted medical report simplifier that extracts medical report text (from images, PDFs, or pasted reports), identifies diagnostic entities and lab findings, and presents plain-English patient-friendly explanations and personalized dietary and exercise guidance.
 
 ## Features
 
-- Upload PDF, image, or text-based medical reports.
-- Extract patient details and medical entities.
-- Generate simplified report summaries and recommendations.
-- Sign in locally or with Google OAuth.
-- Store patients and reports separately for each signed-in account.
-- Automatically initialize and repair the local SQLite schema at startup.
+- **Real Medical Report Extraction & OCR**: Upload image files (PNG, JPG, JPEG), PDF lab reports, or paste medical text directly.
+- **Multimodal AI Analysis**: Powered by `@google/genai` (Gemini 3.8 Flash) for clinical OCR and structured text extraction.
+- **Offline Medical Dictionary & NER**: Built-in comprehensive medical dictionary matching diseases, medications, and lab markers.
+- **Personalized Recommendations**: Automatically suggests foods to eat, foods to avoid, and safe physical exercise routines based on detected conditions (e.g. Hypertension, Diabetes, Hyperlipidemia, CKD, Anemia).
+- **Patient & Report History**: Manage patient profiles, unique patient IDs (`PAT-YYYY-XXXX`), and linked report records.
 
-## Setup
+## Quick Start
 
-Install Python 3.12 or newer, create a virtual environment, and install the dependencies:
-
-```powershell
-cd "d:\AI-Based_Friendly_Report_Simplifier-main"
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-Create a local `.env` file from `.env.example`. Keep real OAuth credentials only in `.env`; never commit them.
-
-## Run the Flask application
-
-```powershell
-cd "d:\AI-Based_Friendly_Report_Simplifier-main"
-.\.venv\Scripts\Activate.ps1
-python app.py
-```
-
-Open `http://127.0.0.1:5000`.
-
-The local SQLite database is created at `database/medreport.db` and is intentionally ignored by Git.
-
-## Run the React frontend separately
-
-Install Node.js 18 or newer, then open a second terminal:
-
-```powershell
-cd "d:\AI-Based_Friendly_Report_Simplifier-main\frontend"
+```bash
 npm install
 npm run dev
 ```
 
-Open the Vite URL shown in the terminal, normally `http://127.0.0.1:5173`.
-
-The frontend uses the Flask server for authentication and API requests. Keep Flask running while using the Vite development server.
-
-For a production-style build served by Flask:
-
-```powershell
-cd "d:\AI-Based_Friendly_Report_Simplifier-main\frontend"
-npm run build
-cd ..
-.\.venv\Scripts\Activate.ps1
-python app.py
-```
-
-Then open `http://127.0.0.1:5000`. The React app uses Flask session authentication and JSON endpoints for uploads, patients, reports, and report analysis.
-
-## Run tests
-
-```powershell
-cd "d:\AI-Based_Friendly_Report_Simplifier-main"
-.\.venv\Scripts\Activate.ps1
-python -m unittest discover -s tests -v
-```
-
-## Google OAuth
-
-Set these values in `.env` when Google sign-in is enabled:
-
-```text
-GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://127.0.0.1:5000/auth/google/callback
-```
-
-Google sign-in requests an account chooser so users can switch accounts or add another account. Configure the same callback URL in Google Cloud Console.
+App runs on `http://0.0.0.0:3000`.

@@ -1,0 +1,623 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "workspace@example.com",
+      "display_name": "Workspace Clinician",
+      "provider": "local",
+      "created_at": "2026-09-20T10:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "email": "akash@gmail.com",
+      "display_name": "akash",
+      "provider": "local",
+      "created_at": "2026-09-21T08:30:00.000Z"
+    },
+    {
+      "id": 3,
+      "email": "akash.saravanan1797@gmail.com",
+      "display_name": "Akash Saravanan",
+      "provider": "google",
+      "created_at": "2026-09-21T08:30:00.000Z"
+    },
+    {
+      "id": 4,
+      "email": "abhiram@gmail.com",
+      "display_name": "abhiram",
+      "provider": "local",
+      "created_at": "2026-09-24T05:09:14.516Z"
+    }
+  ],
+  "patients": [
+    {
+      "id": 1,
+      "owner_id": 3,
+      "patient_code": "PAT-2026-K48C",
+      "full_name": "Karuna Chauhan",
+      "age": 36,
+      "gender": "Female",
+      "blood_group": "B+",
+      "contact_email": "karuna.chauhan@example.com",
+      "contact_phone": "+91 98401 23456",
+      "created_at": "2026-09-21T09:09:26.000Z",
+      "updated_at": "2026-09-24T05:09:45.965Z"
+    },
+    {
+      "id": 2,
+      "owner_id": 3,
+      "patient_code": "PAT-2026-A92M",
+      "full_name": "Adhiya",
+      "age": 20,
+      "gender": "Male",
+      "blood_group": "O+",
+      "contact_email": "adhiya.health@example.com",
+      "contact_phone": "+91 97892 34567",
+      "created_at": "2026-09-21T11:20:00.000Z",
+      "updated_at": "2026-09-21T11:20:00.000Z"
+    },
+    {
+      "id": 3,
+      "owner_id": 3,
+      "patient_code": "PAT-2026-8A3F",
+      "full_name": "John Doe",
+      "age": 45,
+      "gender": "Male",
+      "blood_group": "O+",
+      "contact_email": "john.doe@example.com",
+      "contact_phone": "+1-555-0192",
+      "created_at": "2026-09-18T14:10:00.000Z",
+      "updated_at": "2026-09-18T14:10:00.000Z"
+    },
+    {
+      "id": 4,
+      "owner_id": 3,
+      "patient_code": "PAT-2026-7B9C",
+      "full_name": "Jane Smith",
+      "age": 38,
+      "gender": "Female",
+      "blood_group": "A+",
+      "contact_email": "jane.smith@example.com",
+      "contact_phone": "+1-555-0143",
+      "created_at": "2026-09-19T16:40:00.000Z",
+      "updated_at": "2026-09-19T16:40:00.000Z"
+    },
+    {
+      "id": 5,
+      "owner_id": 1,
+      "patient_code": "PAT-2026-W11A",
+      "full_name": "Karuna Chauhan",
+      "age": 36,
+      "gender": "Female",
+      "blood_group": "B+",
+      "contact_email": "karuna.chauhan@example.com",
+      "contact_phone": "+91 98401 23456",
+      "created_at": "2026-09-21T09:09:26.000Z",
+      "updated_at": "2026-09-24T05:09:45.965Z"
+    },
+    {
+      "id": 6,
+      "owner_id": 1,
+      "patient_code": "PAT-2026-W22B",
+      "full_name": "Adhiya",
+      "age": 20,
+      "gender": "Male",
+      "blood_group": "O+",
+      "contact_email": "adhiya.health@example.com",
+      "contact_phone": "+91 97892 34567",
+      "created_at": "2026-09-21T11:20:00.000Z",
+      "updated_at": "2026-09-21T11:20:00.000Z"
+    },
+    {
+      "id": 7,
+      "owner_id": 1,
+      "patient_code": "PAT-2026-W33C",
+      "full_name": "John Doe",
+      "age": 45,
+      "gender": "Male",
+      "blood_group": "O+",
+      "contact_email": "john.doe@example.com",
+      "contact_phone": "+1-555-0192",
+      "created_at": "2026-09-18T14:10:00.000Z",
+      "updated_at": "2026-09-18T14:10:00.000Z"
+    },
+    {
+      "id": 8,
+      "owner_id": 1,
+      "patient_code": "PAT-2026-W44D",
+      "full_name": "Jane Smith",
+      "age": 38,
+      "gender": "Female",
+      "blood_group": "A+",
+      "contact_email": "jane.smith@example.com",
+      "contact_phone": "+1-555-0143",
+      "created_at": "2026-09-19T16:40:00.000Z",
+      "updated_at": "2026-09-19T16:40:00.000Z"
+    }
+  ],
+  "reports": [
+    {
+      "id": 1,
+      "owner_id": 3,
+      "patient_id": 1,
+      "filename": "WhatsApp_Image_2026-09-21_at_9.09.26_AM.jpeg",
+      "file_path": "uploads/1790225400732-WhatsApp_Image_2026-09-21_at_9.09.26_AM.jpeg",
+      "extracted_text": "Patient Name: Karuna Chauhan | Age: 36 | Gender: Female\nClinical Vitals: BP: 130/90 mmHg, SpO2: 98%, Pulse: 82 bpm\nDiagnosis / Clinical Impression: Anxiety with Gastric Discomfort / Dyspepsia\nRx Prescribed:\n1. Pantoprazole 40mg (OD before breakfast)\n2. Clonazepam 0.25mg / Escitalopram 5mg (HS at night)\n3. Antacid suspension (as needed after meals)\nAdvice: Avoid spicy & oily foods, practice deep breathing exercises, review in 1 month.",
+      "simplified_text": "This clinical consultation notes symptoms related to anxiety accompanied by gastric distress (acidity and indigestion). Your blood pressure is 130/90 mmHg, which is slightly elevated, while your blood oxygen saturation (SpO2 98%) is very healthy. The doctor prescribed medications to soothe stomach acid and ease anxiety tension, and recommended mindful breathing and light meals.",
+      "created_at": "2026-09-24T04:50:00.000Z",
+      "entities": [
+        {
+          "id": 1,
+          "report_id": 1,
+          "entity_text": "BP 130/90 mmHg",
+          "entity_label": "LAB_TERM",
+          "explanation": "Blood pressure reading — slightly above optimal resting levels, often elevated during anxiety or physical discomfort."
+        },
+        {
+          "id": 2,
+          "report_id": 1,
+          "entity_text": "SpO2 98%",
+          "entity_label": "LAB_TERM",
+          "explanation": "Oxygen saturation — confirms strong and normal oxygen delivery in your bloodstream."
+        },
+        {
+          "id": 3,
+          "report_id": 1,
+          "entity_text": "Gastric Discomfort",
+          "entity_label": "DISEASE",
+          "explanation": "Indigestion or acid irritation in the stomach lining, often influenced by stress, irregular meals, or certain foods."
+        },
+        {
+          "id": 4,
+          "report_id": 1,
+          "entity_text": "Pantoprazole",
+          "entity_label": "MEDICINE",
+          "explanation": "A medication that reduces stomach acid production to help calm gastric burning and promote lining recovery."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 1,
+          "report_id": 1,
+          "condition_name": "Gastric Discomfort & Anxiety",
+          "foods_to_eat": [
+            "Oatmeal, barley, and bland warm porridge",
+            "Steamed zucchini, squash, and ripe bananas",
+            "Adequate room-temperature water throughout the day"
+          ],
+          "foods_to_avoid": [
+            "Heavily spiced, fried, or chili-laden dishes",
+            "High-caffeine espresso, energy drinks, and sodas",
+            "Heavy meals within 3 hours before sleep"
+          ],
+          "recommended_exercise": [
+            "Gentle walking for 20–30 minutes in the morning or early evening",
+            "Slow diaphragmatic breathing and relaxation stretches"
+          ],
+          "exercise_precautions": "Avoid intense jumping or heavy abdominal strain right after meals."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "owner_id": 3,
+      "patient_id": 2,
+      "filename": "WhatsApp_Image_2026-09-24_at_9.42.00_AM.jpeg",
+      "file_path": "uploads/1790224999092-WhatsApp_Image_2026-09-24_at_9.42.00_AM.jpeg",
+      "extracted_text": "Patient Name: Adhiya | Age: 20 Yrs | Gender: Male\nVitals: Temperature: 99°F, Blood Pressure: 115/66 mmHg, SpO2: 99%, Pulse Rate: 96 bpm\nClinical Impression: Acute Febrile Episode / Mild Upper Respiratory Infection\nPrescription:\n1. Paracetamol 650mg SOS for fever\n2. Azithromycin 500mg (1 tablet daily for 3 days)\n3. Oral Rehydration Salts (ORS) in water daily\nGeneral Advice: Ample hydration, bed rest, review if temperature persists above 101°F.",
+      "simplified_text": "This prescription documents a mild low-grade fever (99°F) and a slightly elevated pulse rate (96 bpm), which is a normal immune response when fighting off an infection. Your blood pressure (115/66) and blood oxygen level (99%) are completely normal. The physician prescribed an antibiotic course, fever/pain relief, and fluid electrolytes for rapid recovery.",
+      "created_at": "2026-09-24T04:43:00.000Z",
+      "entities": [
+        {
+          "id": 5,
+          "report_id": 2,
+          "entity_text": "Temperature 99°F",
+          "entity_label": "LAB_TERM",
+          "explanation": "Low-grade fever indicating your body's immune system is responding to a viral or bacterial challenge."
+        },
+        {
+          "id": 6,
+          "report_id": 2,
+          "entity_text": "Paracetamol",
+          "entity_label": "MEDICINE",
+          "explanation": "A widely used medication that lowers fever and eases bodily aches and discomfort."
+        },
+        {
+          "id": 7,
+          "report_id": 2,
+          "entity_text": "ORS",
+          "entity_label": "MEDICINE",
+          "explanation": "Oral Rehydration Salts — replaces vital salts and electrolytes to prevent dehydration during fever."
+        },
+        {
+          "id": 8,
+          "report_id": 2,
+          "entity_text": "SpO2 99%",
+          "entity_label": "LAB_TERM",
+          "explanation": "High and optimal blood oxygen saturation, confirming your lungs are functioning well."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 2,
+          "report_id": 2,
+          "condition_name": "Acute Febrile Episode",
+          "foods_to_eat": [
+            "Clear vegetable broth, chicken soup, and warm herbal tea",
+            "Fresh tender coconut water and electrolyte rehydration drinks",
+            "Light soft rice, khichdi, or toast"
+          ],
+          "foods_to_avoid": [
+            "Ice-cold drinks and refrigerated desserts",
+            "Greasy, heavy, or ultra-processed fast food"
+          ],
+          "recommended_exercise": [
+            "Prioritize quiet bed rest and sleep to assist recovery",
+            "Avoid strenuous workouts or sports until fever-free for at least 48 hours"
+          ],
+          "exercise_precautions": "Do not exercise while actively experiencing a fever."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "owner_id": 3,
+      "patient_id": 3,
+      "filename": "HbA1c_and_Glycemic_Profile.pdf",
+      "file_path": null,
+      "extracted_text": "Clinical Laboratory Report - Patient: John Doe (45/M)\nTest: Glycated Hemoglobin (HbA1c): 7.1 % (Reference: <5.7% Normal, 5.7-6.4% Prediabetes, >=6.5% Diabetes)\nFasting Blood Sugar: 126 mg/dL\nRandom Blood Sugar (RBS): 158 mg/dL\nSerum Creatinine: 0.95 mg/dL (Normal: 0.7 - 1.3 mg/dL)\nImpression: Elevated glycated hemoglobin consistent with Type 2 Diabetes Mellitus with sub-optimal glycemic control.\nMedication: Metformin 500mg BID.",
+      "simplified_text": "This glycemic panel provides a 3-month average of your blood sugar levels. Your HbA1c result of 7.1% is slightly above the ideal target range, indicating your body is having trouble processing glucose efficiently. Your kidney function marker (Creatinine 0.95) is healthy and normal. Routine adherence to prescribed Metformin, balanced meals, and regular walking will help bring your glucose closer to goal.",
+      "created_at": "2026-09-23T18:20:00.000Z",
+      "entities": [
+        {
+          "id": 9,
+          "report_id": 3,
+          "entity_text": "HbA1c 7.1%",
+          "entity_label": "LAB_TERM",
+          "explanation": "Reflects your average blood sugar over the last 2 to 3 months — slightly above standard targets."
+        },
+        {
+          "id": 10,
+          "report_id": 3,
+          "entity_text": "Diabetes Mellitus",
+          "entity_label": "DISEASE",
+          "explanation": "A metabolic condition where the body does not properly manage circulating blood sugar."
+        },
+        {
+          "id": 11,
+          "report_id": 3,
+          "entity_text": "Metformin",
+          "entity_label": "MEDICINE",
+          "explanation": "A cornerstone medicine that assists cells in utilizing glucose and reduces excess sugar released by the liver."
+        },
+        {
+          "id": 12,
+          "report_id": 3,
+          "entity_text": "Creatinine",
+          "entity_label": "LAB_TERM",
+          "explanation": "A natural muscle byproduct filtered by the kidneys; normal levels indicate intact kidney clearance."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 3,
+          "report_id": 3,
+          "condition_name": "Type 2 Diabetes Mellitus",
+          "foods_to_eat": [
+            "Non-starchy vegetables such as spinach, bell peppers, and cucumbers",
+            "High-fiber legumes, lentils, chickpeas, and beans",
+            "Whole grains like rolled oats, quinoa, and brown rice in modest portions"
+          ],
+          "foods_to_avoid": [
+            "Sweetened sodas, packaged juices, and energy drinks",
+            "Refined flour baked goods and sugary breakfast cereals",
+            "Excessive candy and dessert items"
+          ],
+          "recommended_exercise": [
+            "Brisk walking for 30 minutes 5 days a week",
+            "Gentle resistance band exercises twice weekly to enhance muscle glucose uptake"
+          ],
+          "exercise_precautions": "Keep a small fast-acting snack on hand if taking walks far from home."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "owner_id": 3,
+      "patient_id": 4,
+      "filename": "Lipid_Panel_and_Cholesterol.pdf",
+      "file_path": null,
+      "extracted_text": "Cardiovascular Risk Screening - Patient: Jane Smith (38/F)\nTotal Cholesterol: 236 mg/dL (Desirable: <200)\nLDL Cholesterol (Calculated): 148 mg/dL (Desirable: <100)\nHDL Cholesterol: 52 mg/dL (Normal: >50)\nTriglycerides: 168 mg/dL (Normal: <150)\nImpression: Borderline hyperlipidemia with elevated LDL cholesterol. Recommended: Dietary modification, aerobic exercise, and clinical follow-up.",
+      "simplified_text": "Your lipid evaluation indicates that while your protective HDL ('good') cholesterol (52) is in a healthy range, your LDL ('bad') cholesterol is higher than recommended. Over time, high LDL can lead to gradual plaque accumulation in blood vessels. Boosting soluble fiber intake and choosing unsaturated healthy fats will help naturally lower LDL levels.",
+      "created_at": "2026-09-22T14:15:00.000Z",
+      "entities": [
+        {
+          "id": 13,
+          "report_id": 4,
+          "entity_text": "LDL 148 mg/dL",
+          "entity_label": "LAB_TERM",
+          "explanation": "Often called 'bad' cholesterol; high concentrations can gradually deposit along artery walls."
+        },
+        {
+          "id": 14,
+          "report_id": 4,
+          "entity_text": "HDL 52 mg/dL",
+          "entity_label": "LAB_TERM",
+          "explanation": "'Good' cholesterol that helps sweep away excess cholesterol from your bloodstream back to the liver."
+        },
+        {
+          "id": 15,
+          "report_id": 4,
+          "entity_text": "Hyperlipidemia",
+          "entity_label": "DISEASE",
+          "explanation": "A general term for higher-than-desirable levels of fats or cholesterol in the blood."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 4,
+          "report_id": 4,
+          "condition_name": "Hyperlipidemia",
+          "foods_to_eat": [
+            "Steel-cut oats, barley, and foods rich in soluble fiber",
+            "Heart-healthy nuts like almonds and walnuts",
+            "Olive oil, avocado, and flaxseed as primary fat sources"
+          ],
+          "foods_to_avoid": [
+            "Trans fats found in packaged pastries and fried convenience snacks",
+            "Fatty cuts of processed meats and sausage",
+            "Excessive butter and whole-fat cream products"
+          ],
+          "recommended_exercise": [
+            "30–45 minutes of moderate aerobic activity (e.g. brisk walking, cycling, or swimming) 4–5 days per week"
+          ],
+          "exercise_precautions": "Begin each workout session with dynamic warming stretches."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "owner_id": 1,
+      "patient_id": 5,
+      "filename": "WhatsApp_Image_2026-09-21_at_9.09.26_AM.jpeg",
+      "file_path": "uploads/1790225400732-WhatsApp_Image_2026-09-21_at_9.09.26_AM.jpeg",
+      "extracted_text": "Patient Name: Karuna Chauhan | Age: 36 | Gender: Female\nClinical Vitals: BP: 130/90 mmHg, SpO2: 98%, Pulse: 82 bpm\nDiagnosis / Clinical Impression: Anxiety with Gastric Discomfort / Dyspepsia\nRx Prescribed:\n1. Pantoprazole 40mg (OD before breakfast)\n2. Clonazepam 0.25mg / Escitalopram 5mg (HS at night)\n3. Antacid suspension (as needed after meals)\nAdvice: Avoid spicy & oily foods, practice deep breathing exercises, review in 1 month.",
+      "simplified_text": "This clinical consultation notes symptoms related to anxiety accompanied by gastric distress (acidity and indigestion). Your blood pressure is 130/90 mmHg, which is slightly elevated, while your blood oxygen saturation (SpO2 98%) is very healthy. The doctor prescribed medications to soothe stomach acid and ease anxiety tension, and recommended mindful breathing and light meals.",
+      "created_at": "2026-09-24T04:50:00.000Z",
+      "entities": [
+        {
+          "id": 1,
+          "report_id": 1,
+          "entity_text": "BP 130/90 mmHg",
+          "entity_label": "LAB_TERM",
+          "explanation": "Blood pressure reading — slightly above optimal resting levels, often elevated during anxiety or physical discomfort."
+        },
+        {
+          "id": 2,
+          "report_id": 1,
+          "entity_text": "SpO2 98%",
+          "entity_label": "LAB_TERM",
+          "explanation": "Oxygen saturation — confirms strong and normal oxygen delivery in your bloodstream."
+        },
+        {
+          "id": 3,
+          "report_id": 1,
+          "entity_text": "Gastric Discomfort",
+          "entity_label": "DISEASE",
+          "explanation": "Indigestion or acid irritation in the stomach lining, often influenced by stress, irregular meals, or certain foods."
+        },
+        {
+          "id": 4,
+          "report_id": 1,
+          "entity_text": "Pantoprazole",
+          "entity_label": "MEDICINE",
+          "explanation": "A medication that reduces stomach acid production to help calm gastric burning and promote lining recovery."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 1,
+          "report_id": 1,
+          "condition_name": "Gastric Discomfort & Anxiety",
+          "foods_to_eat": [
+            "Oatmeal, barley, and bland warm porridge",
+            "Steamed zucchini, squash, and ripe bananas",
+            "Adequate room-temperature water throughout the day"
+          ],
+          "foods_to_avoid": [
+            "Heavily spiced, fried, or chili-laden dishes",
+            "High-caffeine espresso, energy drinks, and sodas",
+            "Heavy meals within 3 hours before sleep"
+          ],
+          "recommended_exercise": [
+            "Gentle walking for 20–30 minutes in the morning or early evening",
+            "Slow diaphragmatic breathing and relaxation stretches"
+          ],
+          "exercise_precautions": "Avoid intense jumping or heavy abdominal strain right after meals."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "owner_id": 1,
+      "patient_id": 6,
+      "filename": "WhatsApp_Image_2026-09-24_at_9.42.00_AM.jpeg",
+      "file_path": "uploads/1790224999092-WhatsApp_Image_2026-09-24_at_9.42.00_AM.jpeg",
+      "extracted_text": "Patient Name: Adhiya | Age: 20 Yrs | Gender: Male\nVitals: Temperature: 99°F, Blood Pressure: 115/66 mmHg, SpO2: 99%, Pulse Rate: 96 bpm\nClinical Impression: Acute Febrile Episode / Mild Upper Respiratory Infection\nPrescription:\n1. Paracetamol 650mg SOS for fever\n2. Azithromycin 500mg (1 tablet daily for 3 days)\n3. Oral Rehydration Salts (ORS) in water daily\nGeneral Advice: Ample hydration, bed rest, review if temperature persists above 101°F.",
+      "simplified_text": "This prescription documents a mild low-grade fever (99°F) and a slightly elevated pulse rate (96 bpm), which is a normal immune response when fighting off an infection. Your blood pressure (115/66) and blood oxygen level (99%) are completely normal. The physician prescribed an antibiotic course, fever/pain relief, and fluid electrolytes for rapid recovery.",
+      "created_at": "2026-09-24T04:43:00.000Z",
+      "entities": [
+        {
+          "id": 5,
+          "report_id": 2,
+          "entity_text": "Temperature 99°F",
+          "entity_label": "LAB_TERM",
+          "explanation": "Low-grade fever indicating your body's immune system is responding to a viral or bacterial challenge."
+        },
+        {
+          "id": 6,
+          "report_id": 2,
+          "entity_text": "Paracetamol",
+          "entity_label": "MEDICINE",
+          "explanation": "A widely used medication that lowers fever and eases bodily aches and discomfort."
+        },
+        {
+          "id": 7,
+          "report_id": 2,
+          "entity_text": "ORS",
+          "entity_label": "MEDICINE",
+          "explanation": "Oral Rehydration Salts — replaces vital salts and electrolytes to prevent dehydration during fever."
+        },
+        {
+          "id": 8,
+          "report_id": 2,
+          "entity_text": "SpO2 99%",
+          "entity_label": "LAB_TERM",
+          "explanation": "High and optimal blood oxygen saturation, confirming your lungs are functioning well."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 2,
+          "report_id": 2,
+          "condition_name": "Acute Febrile Episode",
+          "foods_to_eat": [
+            "Clear vegetable broth, chicken soup, and warm herbal tea",
+            "Fresh tender coconut water and electrolyte rehydration drinks",
+            "Light soft rice, khichdi, or toast"
+          ],
+          "foods_to_avoid": [
+            "Ice-cold drinks and refrigerated desserts",
+            "Greasy, heavy, or ultra-processed fast food"
+          ],
+          "recommended_exercise": [
+            "Prioritize quiet bed rest and sleep to assist recovery",
+            "Avoid strenuous workouts or sports until fever-free for at least 48 hours"
+          ],
+          "exercise_precautions": "Do not exercise while actively experiencing a fever."
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "owner_id": 1,
+      "patient_id": 7,
+      "filename": "HbA1c_and_Glycemic_Profile.pdf",
+      "file_path": null,
+      "extracted_text": "Clinical Laboratory Report - Patient: John Doe (45/M)\nTest: Glycated Hemoglobin (HbA1c): 7.1 % (Reference: <5.7% Normal, 5.7-6.4% Prediabetes, >=6.5% Diabetes)\nFasting Blood Sugar: 126 mg/dL\nRandom Blood Sugar (RBS): 158 mg/dL\nSerum Creatinine: 0.95 mg/dL (Normal: 0.7 - 1.3 mg/dL)\nImpression: Elevated glycated hemoglobin consistent with Type 2 Diabetes Mellitus with sub-optimal glycemic control.\nMedication: Metformin 500mg BID.",
+      "simplified_text": "This glycemic panel provides a 3-month average of your blood sugar levels. Your HbA1c result of 7.1% is slightly above the ideal target range, indicating your body is having trouble processing glucose efficiently. Your kidney function marker (Creatinine 0.95) is healthy and normal. Routine adherence to prescribed Metformin, balanced meals, and regular walking will help bring your glucose closer to goal.",
+      "created_at": "2026-09-23T18:20:00.000Z",
+      "entities": [
+        {
+          "id": 9,
+          "report_id": 3,
+          "entity_text": "HbA1c 7.1%",
+          "entity_label": "LAB_TERM",
+          "explanation": "Reflects your average blood sugar over the last 2 to 3 months — slightly above standard targets."
+        },
+        {
+          "id": 10,
+          "report_id": 3,
+          "entity_text": "Diabetes Mellitus",
+          "entity_label": "DISEASE",
+          "explanation": "A metabolic condition where the body does not properly manage circulating blood sugar."
+        },
+        {
+          "id": 11,
+          "report_id": 3,
+          "entity_text": "Metformin",
+          "entity_label": "MEDICINE",
+          "explanation": "A cornerstone medicine that assists cells in utilizing glucose and reduces excess sugar released by the liver."
+        },
+        {
+          "id": 12,
+          "report_id": 3,
+          "entity_text": "Creatinine",
+          "entity_label": "LAB_TERM",
+          "explanation": "A natural muscle byproduct filtered by the kidneys; normal levels indicate intact kidney clearance."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 3,
+          "report_id": 3,
+          "condition_name": "Type 2 Diabetes Mellitus",
+          "foods_to_eat": [
+            "Non-starchy vegetables such as spinach, bell peppers, and cucumbers",
+            "High-fiber legumes, lentils, chickpeas, and beans",
+            "Whole grains like rolled oats, quinoa, and brown rice in modest portions"
+          ],
+          "foods_to_avoid": [
+            "Sweetened sodas, packaged juices, and energy drinks",
+            "Refined flour baked goods and sugary breakfast cereals",
+            "Excessive candy and dessert items"
+          ],
+          "recommended_exercise": [
+            "Brisk walking for 30 minutes 5 days a week",
+            "Gentle resistance band exercises twice weekly to enhance muscle glucose uptake"
+          ],
+          "exercise_precautions": "Keep a small fast-acting snack on hand if taking walks far from home."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "owner_id": 1,
+      "patient_id": 8,
+      "filename": "Lipid_Panel_and_Cholesterol.pdf",
+      "file_path": null,
+      "extracted_text": "Cardiovascular Risk Screening - Patient: Jane Smith (38/F)\nTotal Cholesterol: 236 mg/dL (Desirable: <200)\nLDL Cholesterol (Calculated): 148 mg/dL (Desirable: <100)\nHDL Cholesterol: 52 mg/dL (Normal: >50)\nTriglycerides: 168 mg/dL (Normal: <150)\nImpression: Borderline hyperlipidemia with elevated LDL cholesterol. Recommended: Dietary modification, aerobic exercise, and clinical follow-up.",
+      "simplified_text": "Your lipid evaluation indicates that while your protective HDL ('good') cholesterol (52) is in a healthy range, your LDL ('bad') cholesterol is higher than recommended. Over time, high LDL can lead to gradual plaque accumulation in blood vessels. Boosting soluble fiber intake and choosing unsaturated healthy fats will help naturally lower LDL levels.",
+      "created_at": "2026-09-22T14:15:00.000Z",
+      "entities": [
+        {
+          "id": 13,
+          "report_id": 4,
+          "entity_text": "LDL 148 mg/dL",
+          "entity_label": "LAB_TERM",
+          "explanation": "Often called 'bad' cholesterol; high concentrations can gradually deposit along artery walls."
+        },
+        {
+          "id": 14,
+          "report_id": 4,
+          "entity_text": "HDL 52 mg/dL",
+          "entity_label": "LAB_TERM",
+          "explanation": "'Good' cholesterol that helps sweep away excess cholesterol from your bloodstream back to the liver."
+        },
+        {
+          "id": 15,
+          "report_id": 4,
+          "entity_text": "Hyperlipidemia",
+          "entity_label": "DISEASE",
+          "explanation": "A general term for higher-than-desirable levels of fats or cholesterol in the blood."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 4,
+          "report_id": 4,
+          "condition_name": "Hyperlipidemia",
+          "foods_to_eat": [
+            "Steel-cut oats, barley, and foods rich in soluble fiber",
+            "Heart-healthy nuts like almonds and walnuts",
+            "Olive oil, avocado, and flaxseed as primary fat sources"
+          ],
+          "foods_to_avoid": [
+            "Trans fats found in packaged pastries and fried convenience snacks",
+            "Fatty cuts of processed meats and sausage",
+            "Excessive butter and whole-fat cream products"
+          ],
+          "recommended_exercise": [
+            "30–45 minutes of moderate aerobic activity (e.g. brisk walking, cycling, or swimming) 4–5 days per week"
+          ],
+          "exercise_precautions": "Begin each workout session with dynamic warming stretches."
+        }
+      ]
+    }
+  ],
+  "nextUserId": 6,
+  "nextPatientId": 10,
+  "nextReportId": 9,
+  "nextEntityId": 25,
+  "nextRecId": 6
+}

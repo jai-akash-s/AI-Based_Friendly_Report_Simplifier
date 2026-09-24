@@ -1,0 +1,5 @@
+{
+  "name": "AI Report Simplifier",
+  "description": "AI-powered medical report simplifier that turns complex medical reports and lab results into clear, friendly, and actionable explanations.",
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

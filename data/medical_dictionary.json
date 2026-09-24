@@ -9,7 +9,11 @@
     "hypothyroidism": "Your thyroid gland isn't making enough hormone, which can slow down your body.",
     "hyperthyroidism": "Your thyroid gland is making too much hormone, speeding up your body's processes.",
     "osteoarthritis": "Wear-and-tear damage to joint cartilage, causing pain and stiffness.",
-    "chronic kidney disease": "Your kidneys are gradually losing their ability to filter waste from your blood."
+    "chronic kidney disease": "Your kidneys are gradually losing their ability to filter waste from your blood.",
+    "hypoglycemia": "Low blood sugar — your blood glucose dropped below healthy levels, which can cause dizziness, shakiness, or weakness.",
+    "hypoglycemic": "Experiencing abnormally low blood sugar levels (glucose below 70 mg/dL).",
+    "giddiness": "A sensation of dizziness, lightheadedness, or feeling faint, often triggered by a drop in blood sugar or blood pressure.",
+    "restlessness": "Feeling jittery or unable to relax, a physiological stress response when the brain lacks adequate glucose."
   },
   "medicines": {
     "metformin": "A common medicine to help control blood sugar in diabetes.",
@@ -18,9 +22,12 @@
     "levothyroxine": "A medicine that replaces thyroid hormone your body isn't making enough of.",
     "paracetamol": "A common pain reliever and fever reducer.",
     "aspirin": "A medicine used to reduce pain, fever, and to help prevent blood clots.",
-    "omeprazole": "A medicine that reduces stomach acid, used for acid reflux or ulcers."
+    "omeprazole": "A medicine that reduces stomach acid, used for acid reflux or ulcers.",
+    "dextrose": "A form of glucose administered to rapidly raise blood sugar during hypoglycemia.",
+    "ors": "Oral Rehydration Salts — an electrolyte solution used to restore fluids and minerals."
   },
   "lab_terms": {
+    "rbs": "Random Blood Sugar — measures the glucose in your blood at any given time (normal range is typically 70-140 mg/dL).",
     "hba1c": "A test showing your average blood sugar level over the past 2-3 months.",
     "creatinine": "A waste product filtered by your kidneys — high levels can mean your kidneys aren't filtering well.",
     "hemoglobin": "The protein in red blood cells that carries oxygen around your body.",
@@ -70,6 +77,24 @@
         "Post-meal 10-15 minute short walks to help lower glucose spikes"
       ],
       "exercise_precautions": "Check blood sugar before intense workouts and carry a fast-acting carb source."
+    },
+    "hypoglycemia": {
+      "foods_to_eat": [
+        "Balanced meals with complex carbohydrates (oats, whole wheat, brown rice)",
+        "Lean proteins and healthy fats with meals to prevent blood sugar drops",
+        "Fast-acting carbs (glucose tablets, 1/2 cup fruit juice, or raisins) for acute low sugar episodes",
+        "Regular snacks between meals if active"
+      ],
+      "foods_to_avoid": [
+        "Skipping meals or fasting for extended periods",
+        "Refined sugars on an empty stomach (causes sudden spike and subsequent crash)",
+        "Excessive alcohol, especially on an empty stomach"
+      ],
+      "recommended_exercise": [
+        "Light to moderate physical activities (walking, light yoga)",
+        "Check glucose levels before exercise; avoid exercising if blood sugar is under 100 mg/dL without a snack"
+      ],
+      "exercise_precautions": "Always carry fast-acting glucose tablets or hard candies during workouts and stop immediately if dizzy."
     },
     "hba1c": {
       "foods_to_eat": [
