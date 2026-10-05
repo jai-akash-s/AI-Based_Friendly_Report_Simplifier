@@ -5,6 +5,7 @@ import json
 from uuid import uuid4
 
 from core.extractor import OCRNotAvailableError, extract_text
+from core.gemini_analyzer import GeminiAnalysisError, analyze_medical_report
 from core.simplifier import simplify_report
 from core.patient_extractor import extract_patient_info
 from core.lab_extractor import extract_lab_results
@@ -42,6 +43,9 @@ def upload():
     text = ""
     saved_filename = None
     saved_filepath = None
+    extraction_confidence = None
+    gemini_result = None
+    gemini_error = None
 
     # -----------------------------
     # Case 1 : User uploaded a file
@@ -66,25 +70,49 @@ def upload():
         saved_filename = original_filename
         saved_filepath = filepath
 
-        try:
-            extracted = extract_text(filepath)
-        except OCRNotAvailableError as error:
-            if os.path.exists(filepath):
-                os.remove(filepath)
-            patients = Patient.query.filter_by(owner_id=user.id).order_by(Patient.full_name.asc()).all()
-            if request.path.startswith("/api/"):
-                return jsonify({"error": str(error)}), 503
-            return render_template("index.html", patients=patients, error=str(error)), 503
-        except (OSError, ValueError) as error:
-            if os.path.exists(filepath):
-                os.remove(filepath)
-            message = "Unable to read this file. Please upload a clear PDF, JPG, PNG, or TXT report."
-            current_app.logger.warning("Report extraction failed: %s", error)
-            patients = Patient.query.filter_by(owner_id=user.id).order_by(Patient.full_name.asc()).all()
-            if request.path.startswith("/api/"):
-                return jsonify({"error": message}), 400
-            return render_template("index.html", patients=patients, error=message), 400
-        text = extracted["text"]
+        if extension == ".txt":
+            try:
+                extracted = extract_text(filepath)
+                text = extracted["text"]
+            except (OSError, ValueError) as error:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                message = "Unable to read this file. Please upload a clear PDF, JPG, PNG, or TXT report."
+                current_app.logger.warning("Report extraction failed: %s", error)
+                patients = Patient.query.filter_by(owner_id=user.id).order_by(Patient.full_name.asc()).all()
+                if request.path.startswith("/api/"):
+                    return jsonify({"error": message}), 400
+                return render_template("index.html", patients=patients, error=message), 400
+        else:
+            try:
+                gemini_result = analyze_medical_report(file_path=filepath)
+            except GeminiAnalysisError as error:
+                gemini_error = str(error)
+                current_app.logger.warning("Gemini report analysis failed: %s", error)
+
+            if gemini_result:
+                text = str(gemini_result.get("extracted_text", "")).strip()
+            if not text:
+                try:
+                    extracted = extract_text(filepath)
+                    text = extracted["text"]
+                    extraction_confidence = extracted.get("confidence")
+                except OCRNotAvailableError as error:
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                    patients = Patient.query.filter_by(owner_id=user.id).order_by(Patient.full_name.asc()).all()
+                    if request.path.startswith("/api/"):
+                        return jsonify({"error": str(error)}), 503
+                    return render_template("index.html", patients=patients, error=str(error)), 503
+                except (OSError, ValueError) as error:
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                    message = "Unable to read this file. Please upload a clear PDF, JPG, PNG, or TXT report."
+                    current_app.logger.warning("Report extraction failed: %s", error)
+                    patients = Patient.query.filter_by(owner_id=user.id).order_by(Patient.full_name.asc()).all()
+                    if request.path.startswith("/api/"):
+                        return jsonify({"error": message}), 400
+                    return render_template("index.html", patients=patients, error=message), 400
         if not text.strip():
             if os.path.exists(filepath):
                 os.remove(filepath)
@@ -112,18 +140,21 @@ def upload():
             error="Please upload a PDF/Image or paste report text.",
         )
 
+    needs_ocr_review = extraction_confidence is not None and extraction_confidence < 65 and not gemini_result
+
     # -----------------------------
     # Auto-Extract Patient Details
     # -----------------------------
-    extracted_patient_info = extract_patient_info(text)
+    extracted_patient_info = {} if needs_ocr_review else extract_patient_info(text)
+    gemini_patient_info = (gemini_result or {}).get("patient_info") or {}
 
     # Merge extracted details with form values (form values take priority if explicitly filled)
-    patient_name = form_name or extracted_patient_info.get("full_name")
-    patient_age = form_age if form_age is not None else extracted_patient_info.get("age")
-    patient_gender = form_gender or extracted_patient_info.get("gender")
-    patient_blood = form_blood or extracted_patient_info.get("blood_group")
-    patient_phone = form_phone or extracted_patient_info.get("contact_phone")
-    patient_email = form_email or extracted_patient_info.get("contact_email")
+    patient_name = form_name or gemini_patient_info.get("full_name") or extracted_patient_info.get("full_name")
+    patient_age = form_age if form_age is not None else gemini_patient_info.get("age") or extracted_patient_info.get("age")
+    patient_gender = form_gender or gemini_patient_info.get("gender") or extracted_patient_info.get("gender")
+    patient_blood = form_blood or gemini_patient_info.get("blood_group") or extracted_patient_info.get("blood_group")
+    patient_phone = form_phone or gemini_patient_info.get("contact_phone") or extracted_patient_info.get("contact_phone")
+    patient_email = form_email or gemini_patient_info.get("contact_email") or extracted_patient_info.get("contact_email")
 
     target_patient = None
 
@@ -146,7 +177,7 @@ def upload():
             ).first()
 
         # Step 3: Automatically create a new patient if still not found
-        if not target_patient:
+        if not target_patient and not needs_ocr_review:
             final_name = patient_name if patient_name else "Patient Record"
             target_patient = Patient(
                 owner_id=user.id,
@@ -159,7 +190,7 @@ def upload():
             )
             db.session.add(target_patient)
             db.session.flush()  # Assigns target_patient.id
-        else:
+        elif target_patient and not needs_ocr_review:
             # Update existing patient fields if missing
             if not target_patient.age and patient_age:
                 target_patient.age = patient_age
@@ -173,12 +204,86 @@ def upload():
                 target_patient.contact_email = patient_email
 
         # Run AI simplification pipeline
-        result = simplify_report(text)
+        result = simplify_report(text, use_ai_fallback=False)
+        if needs_ocr_review:
+            result["entities"] = []
+            result["simplified_summary"] = (
+                "I could not read this handwritten report reliably. "
+                "Review and correct the extracted text below, then analyze it again."
+            )
+            result["recommendations"]["by_condition"] = []
+            result["recommendations"]["aggregated"] = {
+                "foods_to_eat": [],
+                "foods_to_avoid": [],
+                "recommended_exercise": [],
+                "general_precautions": [],
+            }
+        elif gemini_result:
+            merged_entities = []
+            seen_entities = set()
+            for entity in gemini_result.get("entities", []):
+                entity_text = str(entity.get("text", "")).strip()
+                if not entity_text:
+                    continue
+                key = entity_text.casefold()
+                if key in seen_entities:
+                    continue
+                seen_entities.add(key)
+                merged_entities.append({
+                    "text": entity_text,
+                    "label": entity.get("label", "SYMPTOM"),
+                    "explanation": entity.get("explanation", ""),
+                    "source": "gemini_ai",
+                    "confidence": "Moderate",
+                })
+            for entity in result.get("entities", []):
+                key = entity["text"].casefold()
+                if key not in seen_entities:
+                    seen_entities.add(key)
+                    merged_entities.append(entity)
+            result["entities"] = merged_entities
+            result["simplified_summary"] = (
+                gemini_result.get("simplified_summary") or result["simplified_summary"]
+            )
+
+            recommendations = result["recommendations"]
+            aggregated = recommendations["aggregated"]
+            has_dictionary_guidance = bool(recommendations.get("by_condition"))
+            for output_key, gemini_key in (
+                ("foods_to_eat", "foods_to_eat"),
+                ("foods_to_avoid", "foods_to_avoid"),
+                ("recommended_exercise", "recommended_exercise"),
+            ):
+                gemini_items = gemini_result.get(gemini_key) or []
+                rule_items = aggregated[output_key] if has_dictionary_guidance else []
+                aggregated[output_key] = list(dict.fromkeys([*gemini_items, *rule_items]))
+            precautions = [
+                gemini_result.get("exercise_precautions", ""),
+                *(aggregated["general_precautions"] if has_dictionary_guidance else []),
+            ]
+            aggregated["general_precautions"] = list(dict.fromkeys(item for item in precautions if item))
+
+            result["safety"]["medication_warning"] = result["safety"]["medication_warning"] or any(
+                entity.get("label") == "MEDICINE" for entity in merged_entities
+            )
+            if result["safety"]["medication_warning"]:
+                result["safety"]["message"] = (
+                    "Do not start, stop, or change medication based only on this explanation. "
+                    "Confirm prescription details with your doctor or pharmacist."
+                )
+        result["extraction_confidence"] = extraction_confidence
+        result["analysis_warning"] = (
+            "Gemini could not read this image. Check the API key, model access, and network, or review the extracted text manually."
+            if needs_ocr_review and gemini_error
+            else "Add GEMINI_API_KEY to the root .env file and restart for multimodal handwriting recognition. Local OCR is uncertain; review the extracted text before analysis."
+            if needs_ocr_review
+            else None
+        )
 
         # Step 4: Save Medical Report record linked to target_patient
         report_record = MedicalReport(
             owner_id=user.id,
-            patient_id=target_patient.id,
+            patient_id=target_patient.id if target_patient else None,
             title=request.form.get("report_title", "").strip() or saved_filename,
             filename=saved_filename,
             file_path=saved_filepath,

@@ -7,6 +7,21 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
+def safe_json_list(value):
+    """Return a list from JSON-encoded data without crashing on legacy or malformed values."""
+    if not value:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except (TypeError, ValueError):
+            return []
+        return parsed if isinstance(parsed, list) else []
+    return []
+
+
 def utc_now():
     return datetime.now(timezone.utc)
 
@@ -110,7 +125,7 @@ class MedicalReport(db.Model):
             "id": self.id,
             "patient_id": self.patient_id,
             "title": self.title,
-            "lab_results": json.loads(self.lab_results) if self.lab_results else [],
+            "lab_results": safe_json_list(self.lab_results),
             "filename": self.filename,
             "file_path": self.file_path,
             "extracted_text": self.extracted_text,

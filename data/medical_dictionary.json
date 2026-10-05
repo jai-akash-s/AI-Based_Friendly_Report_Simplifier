@@ -1,6 +1,8 @@
 {
   "diseases": {
     "hypertension": "High blood pressure — your heart is working harder than it should to pump blood.",
+    "anxiety": "Anxiety can cause persistent worry or fear and may affect daily life. A clinician can help assess symptoms and treatment options.",
+    "gastric": "A general term for stomach-related discomfort; it does not identify one specific diagnosis.",
     "diabetes mellitus": "A condition where your body has trouble controlling blood sugar levels.",
     "myocardial infarction": "A heart attack — part of the heart muscle isn't getting enough blood.",
     "hyperlipidemia": "High levels of fat (cholesterol) in your blood.",
@@ -9,11 +11,7 @@
     "hypothyroidism": "Your thyroid gland isn't making enough hormone, which can slow down your body.",
     "hyperthyroidism": "Your thyroid gland is making too much hormone, speeding up your body's processes.",
     "osteoarthritis": "Wear-and-tear damage to joint cartilage, causing pain and stiffness.",
-    "chronic kidney disease": "Your kidneys are gradually losing their ability to filter waste from your blood.",
-    "hypoglycemia": "Low blood sugar — your blood glucose dropped below healthy levels, which can cause dizziness, shakiness, or weakness.",
-    "hypoglycemic": "Experiencing abnormally low blood sugar levels (glucose below 70 mg/dL).",
-    "giddiness": "A sensation of dizziness, lightheadedness, or feeling faint, often triggered by a drop in blood sugar or blood pressure.",
-    "restlessness": "Feeling jittery or unable to relax, a physiological stress response when the brain lacks adequate glucose."
+    "chronic kidney disease": "Your kidneys are gradually losing their ability to filter waste from your blood."
   },
   "medicines": {
     "metformin": "A common medicine to help control blood sugar in diabetes.",
@@ -23,11 +21,13 @@
     "paracetamol": "A common pain reliever and fever reducer.",
     "aspirin": "A medicine used to reduce pain, fever, and to help prevent blood clots.",
     "omeprazole": "A medicine that reduces stomach acid, used for acid reflux or ulcers.",
-    "dextrose": "A form of glucose administered to rapidly raise blood sugar during hypoglycemia.",
-    "ors": "Oral Rehydration Salts — an electrolyte solution used to restore fluids and minerals."
+    "rozad-100": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist.",
+    "ambulax": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist.",
+    "pathil plus": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist.",
+    "placed": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist.",
+    "eropet 40": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist."
   },
   "lab_terms": {
-    "rbs": "Random Blood Sugar — measures the glucose in your blood at any given time (normal range is typically 70-140 mg/dL).",
     "hba1c": "A test showing your average blood sugar level over the past 2-3 months.",
     "creatinine": "A waste product filtered by your kidneys — high levels can mean your kidneys aren't filtering well.",
     "hemoglobin": "The protein in red blood cells that carries oxygen around your body.",
@@ -44,6 +44,39 @@
     "cbc": "Complete Blood Count — a group of tests measuring blood cells."
   },
   "recommendations": {
+    "anxiety": {
+      "foods_to_eat": [
+        "Regular balanced meals with vegetables, whole grains, and lean protein",
+        "Drink water and avoid skipping meals"
+      ],
+      "foods_to_avoid": [
+        "Excess caffeine (coffee, energy drinks, or strong tea) if it worsens anxiety",
+        "Alcohol or calming supplements unless your clinician approves them"
+      ],
+      "recommended_exercise": [
+        "Brisk walking or another comfortable activity, starting gradually",
+        "Gentle stretching, yoga, or breathing exercises for relaxation"
+      ],
+      "exercise_precautions": "Stop activity and seek medical advice for chest pain, fainting, or unusual shortness of breath. New or severe symptoms should be discussed with a clinician."
+    },
+    "gastric": {
+      "foods_to_eat": [
+        "Oats and other whole grains, if tolerated",
+        "Yogurt or other probiotic-rich foods, if tolerated",
+        "Lean proteins such as chicken or fish",
+        "Fresh fruits and vegetables that do not trigger symptoms"
+      ],
+      "foods_to_avoid": [
+        "Spicy or fried foods if they worsen your symptoms",
+        "Caffeine or alcohol if they worsen your symptoms",
+        "Large meals close to bedtime if they worsen reflux"
+      ],
+      "recommended_exercise": [
+        "Gentle walking for 20-30 minutes, as tolerated",
+        "Avoid vigorous activity immediately after eating"
+      ],
+      "exercise_precautions": "Food triggers vary. Avoid only foods that worsen your symptoms, and ask your clinician about persistent stomach discomfort."
+    },
     "hypertension": {
       "foods_to_eat": [
         "Leafy greens (spinach, kale) rich in potassium",
@@ -81,24 +114,6 @@
         "Post-meal 10-15 minute short walks to help lower glucose spikes"
       ],
       "exercise_precautions": "Check blood sugar before intense workouts and carry a fast-acting carb source."
-    },
-    "hypoglycemia": {
-      "foods_to_eat": [
-        "Balanced meals with complex carbohydrates (oats, whole wheat, brown rice)",
-        "Lean proteins and healthy fats with meals to prevent blood sugar drops",
-        "Fast-acting carbs (glucose tablets, 1/2 cup fruit juice, or raisins) for acute low sugar episodes",
-        "Regular snacks between meals if active"
-      ],
-      "foods_to_avoid": [
-        "Skipping meals or fasting for extended periods",
-        "Refined sugars on an empty stomach (causes sudden spike and subsequent crash)",
-        "Excessive alcohol, especially on an empty stomach"
-      ],
-      "recommended_exercise": [
-        "Light to moderate physical activities (walking, light yoga)",
-        "Check glucose levels before exercise; avoid exercising if blood sugar is under 100 mg/dL without a snack"
-      ],
-      "exercise_precautions": "Always carry fast-acting glucose tablets or hard candies during workouts and stop immediately if dizzy."
     },
     "hba1c": {
       "foods_to_eat": [

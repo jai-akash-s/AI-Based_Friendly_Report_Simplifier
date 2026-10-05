@@ -52,10 +52,19 @@ def search_reports():
 @login_required
 def dashboard_stats():
 	from datetime import datetime, timezone
-	from sqlalchemy import func
 	user = get_current_user()
 	month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 	reports = MedicalReport.query.filter_by(owner_id=user.id).all()
+
+	def is_from_current_month(report):
+		"""Compare SQLite's naive timestamps safely with the UTC month boundary."""
+		created_at = report.created_at
+		if not created_at:
+			return False
+		if created_at.tzinfo is None:
+			created_at = created_at.replace(tzinfo=timezone.utc)
+		return created_at >= month_start
+
 	condition_counts = {}
 	for report in reports:
 		for entity in report.entities:
@@ -63,7 +72,7 @@ def dashboard_stats():
 	return jsonify({
 		"patient_count": Patient.query.filter_by(owner_id=user.id).count(),
 		"report_count": len(reports),
-		"reports_this_month": sum(1 for report in reports if report.created_at and report.created_at >= month_start),
+		"reports_this_month": sum(1 for report in reports if is_from_current_month(report)),
 		"most_common_conditions": sorted(condition_counts.items(), key=lambda item: item[1], reverse=True)[:5],
 	})
 

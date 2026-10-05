@@ -7,10 +7,13 @@
 import unittest
 import os
 import sys
+from io import BytesIO
+from unittest.mock import patch
 from typing import cast
 
 # Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 from app import app
 from database.models import AuditLog, db, Patient, MedicalReport, MedicalEntity, Recommendation, User
@@ -126,9 +129,76 @@ class TestDatabaseModels(unittest.TestCase):
         response = self.client.post("/logout")
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.location, "/login")
-
         login_page = self.client.get(response.location)
         self.assertEqual(login_page.status_code, 200)
+
+    def test_low_confidence_image_upload_pauses_patient_and_recommendations(self):
+        upload_path = None
+        try:
+            with patch("routes.upload_routes.analyze_medical_report", return_value=None), patch(
+                "routes.upload_routes.extract_text",
+                return_value={"text": "uncertain handwriting", "confidence": 46, "pages": []},
+            ):
+                response = self.client.post(
+                    "/api/upload",
+                    data={"report": (BytesIO(b"test image data"), "prescription.png")},
+                    content_type="multipart/form-data",
+                )
+
+            self.assertEqual(response.status_code, 200)
+            result = response.json["result"]
+            self.assertIsNone(response.json["patient"])
+            self.assertEqual(result["extraction_confidence"], 46)
+            self.assertEqual(result["entities"], [])
+            self.assertIn("GEMINI_API_KEY", result["analysis_warning"])
+            self.assertEqual(result["recommendations"]["aggregated"]["foods_to_eat"], [])
+            self.assertEqual(result["recommendations"]["aggregated"]["foods_to_avoid"], [])
+            self.assertEqual(result["recommendations"]["aggregated"]["recommended_exercise"], [])
+            upload_path = response.json["report"]["file_path"]
+            self.assertEqual(Patient.query.count(), 0)
+        finally:
+            if upload_path and os.path.exists(upload_path):
+                os.remove(upload_path)
+
+    def test_gemini_image_analysis_populates_report_for_signed_in_user(self):
+        upload_path = None
+        gemini_result = {
+            "extracted_text": "Karuna Chauhan, 36, Anxiety/Gastric, BP 130/90.",
+            "patient_info": {"full_name": "Karuna Chauhan", "age": 36, "gender": "Female"},
+            "entities": [
+                {"text": "Anxiety", "label": "DISEASE", "explanation": "A feeling of worry."},
+                {"text": "Gastric", "label": "DISEASE", "explanation": "Stomach-related discomfort."},
+            ],
+            "simplified_summary": "Your report mentions anxiety and gastric concerns.",
+            "foods_to_eat": ["Balanced meals"],
+            "foods_to_avoid": ["Foods that worsen symptoms"],
+            "recommended_exercise": ["Gentle walking"],
+            "exercise_precautions": "Ask your clinician if symptoms continue.",
+        }
+        try:
+            with patch("routes.upload_routes.analyze_medical_report", return_value=gemini_result):
+                response = self.client.post(
+                    "/api/upload",
+                    data={"report": (BytesIO(b"test image data"), "prescription.png")},
+                    content_type="multipart/form-data",
+                )
+
+            self.assertEqual(response.status_code, 200)
+            result = response.json["result"]
+            self.assertEqual(response.json["patient"]["full_name"], "Karuna Chauhan")
+            self.assertEqual(response.json["report"]["extracted_text"], gemini_result["extracted_text"])
+            self.assertEqual(result["simplified_summary"], gemini_result["simplified_summary"])
+            self.assertEqual(
+                {entity["text"] for entity in result["entities"]},
+                {"Anxiety", "Gastric", "BP: 130/90"},
+            )
+            self.assertIn("Balanced meals", result["recommendations"]["aggregated"]["foods_to_eat"])
+            upload_path = response.json["report"]["file_path"]
+            saved_report = db.session.get(MedicalReport, response.json["report"]["id"])
+            self.assertEqual(saved_report.owner_id, User.query.filter_by(email="test@example.com").one().id)
+        finally:
+            if upload_path and os.path.exists(upload_path):
+                os.remove(upload_path)
 
     def test_passwords_are_hashed_and_wrong_password_is_rejected(self):
         user = User.query.filter_by(email="test@example.com").first()
@@ -171,6 +241,10 @@ class TestDatabaseModels(unittest.TestCase):
         timeline = self.client.get(f"/api/patients/{patient_id}/timeline")
         self.assertEqual(timeline.status_code, 200)
         self.assertEqual(timeline.json[0]["lab_results"][0]["test_name"], "HbA1c")
+
+        stats = self.client.get("/api/dashboard/stats")
+        self.assertEqual(stats.status_code, 200)
+        self.assertEqual(stats.json["reports_this_month"], 1)
 
     def test_audit_logs_and_admin_protection(self):
         self.assertGreaterEqual(AuditLog.query.filter_by(action="login").count(), 1)

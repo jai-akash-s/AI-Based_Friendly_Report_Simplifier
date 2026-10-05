@@ -1,20 +1,61 @@
 # AI-Based Friendly Report Simplifier
 
-A full-stack AI-assisted medical report simplifier that extracts medical report text (from images, PDFs, or pasted reports), identifies diagnostic entities and lab findings, and presents plain-English patient-friendly explanations and personalized dietary and exercise guidance.
+An AI-assisted Flask application that extracts medical report text, identifies important entities, and presents clearer explanations and recommendations.
 
 ## Features
 
-- **Real Medical Report Extraction & OCR**: Upload image files (PNG, JPG, JPEG), PDF lab reports, or paste medical text directly.
-- **Multimodal AI Analysis**: Powered by `@google/genai` (Gemini 3.8 Flash) for clinical OCR and structured text extraction.
-- **Offline Medical Dictionary & NER**: Built-in comprehensive medical dictionary matching diseases, medications, and lab markers.
-- **Personalized Recommendations**: Automatically suggests foods to eat, foods to avoid, and safe physical exercise routines based on detected conditions (e.g. Hypertension, Diabetes, Hyperlipidemia, CKD, Anemia).
-- **Patient & Report History**: Manage patient profiles, unique patient IDs (`PAT-YYYY-XXXX`), and linked report records.
+- Upload PDF, image, or text-based medical reports.
+- Extract patient details and medical entities.
+- Generate simplified report summaries and recommendations.
+- Sign in locally or with Google OAuth.
+- Store patients and reports separately for each signed-in account.
+- Automatically initialize and repair the local SQLite schema at startup.
 
-## Quick Start
+## Setup
 
-```bash
+Install Python 3.12 or newer, create a virtual environment, and install the dependencies:
+
+```powershell
+cd "d:\AI-Based_Friendly_Report_Simplifier-main"
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Create a local `.env` file from `.env.example`. Keep real OAuth credentials only in `.env`; never commit them.
+
+## Run the application
+
+The project-root React app runs with the Flask authentication and SQLite API backend. If you have existing Express JSON records, import them once:
+
+```powershell
+python -m database.migrate_json_store
 npm install
 npm run dev
 ```
 
-App runs on `http://0.0.0.0:3000`.
+Open `http://127.0.0.1:3000`. `npm run dev` starts Flask on port 5000 and the React app on port 3000. The first local image OCR run downloads Tesseract.js's English data, so an internet connection is needed once. Keep the Python environment and dependencies from Setup available for image preprocessing and scanned-PDF rendering.
+
+Google sign-in uses the existing Authlib OAuth flow. In the root `.env`, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI=http://127.0.0.1:5000/auth/google/callback`; register that exact redirect URI in Google Cloud Console. After sign-in, the browser returns to port 3000. Keep credentials in `.env`, never `.env.example`.
+
+For handwritten reports, set `GEMINI_API_KEY` in the root `.env`. Without it, local OCR is used; uncertain handwriting is shown for correction before recommendations are generated.
+
+## Run tests
+
+```powershell
+cd "d:\AI-Based_Friendly_Report_Simplifier-main"
+.\.venv\Scripts\Activate.ps1
+python -m unittest discover -s tests -v
+```
+
+## Google OAuth
+
+Set these values in `.env` when Google sign-in is enabled:
+
+```text
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://127.0.0.1:5000/auth/google/callback
+```
+
+Google sign-in requests an account chooser so users can switch accounts or add another account. Configure the same callback URL in Google Cloud Console.

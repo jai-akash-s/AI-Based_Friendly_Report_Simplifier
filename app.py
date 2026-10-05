@@ -19,6 +19,16 @@ init_oauth(app)
 def frontend_assets(filename):
     return send_from_directory(os.path.join(app.config["FRONTEND_DIST"], "assets"), filename)
 
+
+@app.route("/logo.webp")
+def frontend_logo():
+    return send_from_directory(app.config["FRONTEND_DIST"], "logo.webp", mimetype="image/webp")
+
+
+@app.route("/logo-favicon.png")
+def frontend_logo_favicon():
+    return send_from_directory(app.config["FRONTEND_DIST"], "logo-favicon.png", mimetype="image/png")
+
 # Initialize Database Extension
 db.init_app(app)
 
@@ -69,6 +79,15 @@ app.register_blueprint(patient_bp)
 app.register_blueprint(auth_bp)
 
 
+@app.get("/health")
+def health_check():
+    return jsonify({
+        "status": "ok",
+        "service": "medical-report-simplifier",
+        "database": "ready",
+    })
+
+
 @app.after_request
 def prevent_authenticated_page_cache(response):
     if not request.path.startswith("/static/"):
@@ -85,4 +104,4 @@ def request_too_large(error):
     return render_template("index.html", error=message), 413
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

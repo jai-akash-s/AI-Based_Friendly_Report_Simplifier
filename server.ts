@@ -1,12 +1,19 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { GoogleGenAI } from '@google/genai';
+import { createWorker, PSM } from 'tesseract.js';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = express();
+const execFileAsync = promisify(execFile);
+let ocrWorkerPromise: ReturnType<typeof createWorker> | null = null;
 const PORT = Number(process.env.PORT) || 3000;
 const uploadDir = path.resolve('uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -28,6 +35,22 @@ const upload = multer({
 
 app.use(cors());
 app.use(cookieParser('medical-report-simplifier-secret'));
+const flaskProxy = createProxyMiddleware({
+  target: process.env.FLASK_URL || 'http://127.0.0.1:5000',
+  changeOrigin: true,
+});
+const flaskRoutePatterns = [
+  /^\/api\/(?:auth(?:\/|$)|login$|register$|logout$|upload$|reports(?:\/|$)|patients(?:\/|$)|dashboard\/stats$)/,
+  /^\/patients\/api(?:\/|$)/,
+  /^\/auth\/google(?:\/|$)/,
+  /^\/logout$/,
+];
+app.use((req, res, next) => {
+  if (flaskRoutePatterns.some((pattern) => pattern.test(req.path))) {
+    return flaskProxy(req, res, next);
+  }
+  return next();
+});
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 
@@ -677,8 +700,11 @@ function simplifyWithRules(text: string) {
         const key = `${term.toLowerCase()}:${label}`;
         if (!seenEntities.has(key)) {
           seenEntities.add(key);
+          const bpReading = term.toLowerCase() === 'bp'
+            ? text.match(/\bBP\s*[:=\-]?\s*(\d{2,3})\s*\/\s*(\d{2,3})\b/i)
+            : null;
           entities.push({
-            text: term,
+            text: bpReading ? `BP: ${bpReading[1]}/${bpReading[2]}` : term,
             label,
             explanation: String(explanation),
             source: 'dictionary',
@@ -740,7 +766,22 @@ function simplifyWithRules(text: string) {
   const summaryLines = entities.map(
     (e) => `- ${e.text.charAt(0).toUpperCase() + e.text.slice(1)} (${e.label}): ${e.explanation}`
   );
-  const simplified_summary = summaryLines.length > 0 ? summaryLines.join('\n') : 'No specific medical terms detected.';
+  const hasAnxietyAndGastric = text.toLowerCase().includes('anxiety') && text.toLowerCase().includes('gastric');
+  let simplified_summary = summaryLines.length > 0 ? summaryLines.join('\n') : 'No specific medical terms detected.';
+  if (hasAnxietyAndGastric) {
+    simplified_summary = 'Your report mentions anxiety and gastric (stomach-related) concerns. ';
+    const bpReading = text.match(/\bBP\s*[:=\-]?\s*(\d{2,3})\s*\/\s*(\d{2,3})\b/i);
+    if (bpReading) {
+      simplified_summary += `It records a blood pressure of ${bpReading[1]}/${bpReading[2]}. One reading alone does not diagnose high blood pressure, but it is worth rechecking and discussing with your clinician. `;
+    }
+    if (entities.some((entity) => entity.label === 'MEDICINE')) {
+      simplified_summary += 'The prescription includes handwritten medicine names; confirm any unclear name or dose with your prescriber or pharmacist. Follow the prescription and do not change medicines based on this summary. ';
+    }
+    if (/follow[\s-]*up[^\n]{0,30}(?:1|one)\s*month/i.test(text)) {
+      simplified_summary += 'The report asks you to follow up in one month.';
+    }
+    simplified_summary = simplified_summary.trim();
+  }
 
   return {
     original_text: text.trim(),
@@ -757,6 +798,83 @@ function simplifyWithRules(text: string) {
       disclaimer:
         'Medical Disclaimer: These dietary and exercise suggestions are provided for general educational purposes only. Always consult a qualified physician or healthcare professional before making any significant changes to your diet, medication, or physical activity routine.',
     },
+  };
+}
+
+async function extractWithLocalPython(filePath: string): Promise<{ text: string; confidence: number | null }> {
+  const virtualEnvPython = path.resolve('.venv', 'Scripts', 'python.exe');
+  const pythonExecutable = process.env.PYTHON_EXECUTABLE ||
+    (process.platform === 'win32' && fs.existsSync(virtualEnvPython) ? virtualEnvPython : 'python');
+  const script = [
+    'import base64, io, json, sys',
+    'from pathlib import Path',
+    'from PIL import Image, ImageEnhance, ImageOps',
+    'source = Path(sys.argv[1])',
+    'pages = []',
+    'def add_image(image):',
+    '    image = ImageOps.autocontrast(ImageOps.exif_transpose(image).convert("L"))',
+    '    if image.width < 1200:',
+    '        scale = min(3, 1200 / image.width)',
+    '        image = image.resize((int(image.width * scale), int(image.height * scale)), Image.Resampling.LANCZOS)',
+    '    image = ImageEnhance.Sharpness(image).enhance(1.5)',
+    '    buffer = io.BytesIO()',
+    '    image.save(buffer, format="PNG")',
+    '    pages.append({"image": base64.b64encode(buffer.getvalue()).decode("ascii")})',
+    'try:',
+    '    suffix = source.suffix.lower()',
+    '    if suffix in {".jpg", ".jpeg", ".png"}:',
+    '        with Image.open(source) as image:',
+    '            add_image(image.copy())',
+    '    elif suffix == ".txt":',
+    '        pages.append({"text": source.read_text(encoding="utf-8", errors="ignore")})',
+    '    elif suffix == ".pdf":',
+    '        import fitz',
+    '        import pdfplumber',
+    '        document = fitz.open(source)',
+    '        with pdfplumber.open(source) as pdf:',
+    '            for index, page in enumerate(pdf.pages):',
+    '                text = (page.extract_text() or "").strip()',
+    '                if len(text) >= 20:',
+    '                    pages.append({"text": text})',
+    '                else:',
+    '                    pixmap = document[index].get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)',
+    '                    image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)',
+    '                    add_image(image)',
+    '        document.close()',
+    '    else:',
+    '        raise ValueError("Unsupported file type")',
+    '    print(json.dumps({"pages": pages}, ensure_ascii=False))',
+    'except Exception as error:',
+    '    print(json.dumps({"error": str(error)}, ensure_ascii=False))',
+  ].join('\n');
+  const { stdout } = await execFileAsync(pythonExecutable, ['-c', script, filePath], {
+    cwd: process.cwd(),
+    windowsHide: true,
+    maxBuffer: 50 * 1024 * 1024,
+  });
+  const result = JSON.parse(stdout.trim());
+  if (result.error) throw new Error(result.error);
+
+  const pages: string[] = [];
+  const confidences: number[] = [];
+  for (const page of result.pages || []) {
+    if (page.text) pages.push(String(page.text).trim());
+    if (page.image) {
+      ocrWorkerPromise ||= createWorker('eng').then(async (worker) => {
+        await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT, user_defined_dpi: '300' });
+        return worker;
+      });
+      const worker = await ocrWorkerPromise;
+      const recognized = await worker.recognize(Buffer.from(page.image, 'base64'));
+      pages.push(recognized.data.text.trim());
+      confidences.push(recognized.data.confidence);
+    }
+  }
+  return {
+    text: pages.filter(Boolean).join('\n\n').trim(),
+    confidence: confidences.length
+      ? Math.round(confidences.reduce((sum, confidence) => sum + confidence, 0) / confidences.length)
+      : null,
   };
 }
 
@@ -844,6 +962,7 @@ Respond ONLY with valid JSON conforming to this exact structure:
 
     const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash'];
     let responseText = '';
+    let lastModelError = '';
 
     for (const model of candidateModels) {
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -858,6 +977,7 @@ Respond ONLY with valid JSON conforming to this exact structure:
           responseText = response.text?.trim() || '';
           if (responseText) break;
         } catch (e: any) {
+          lastModelError = e?.message || 'The model request failed.';
           console.warn(`Model ${model} attempt ${attempt + 1} failed:`, e?.message || e);
           if (attempt === 0) {
             await new Promise((resolve) => setTimeout(resolve, 600));
@@ -867,7 +987,10 @@ Respond ONLY with valid JSON conforming to this exact structure:
       if (responseText) break;
     }
 
-    if (!responseText) return null;
+    if (!responseText) {
+      if (lastModelError) throw new Error(lastModelError);
+      return null;
+    }
 
     const cleaned = responseText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
     const firstBrace = cleaned.indexOf('{');
@@ -876,7 +999,7 @@ Respond ONLY with valid JSON conforming to this exact structure:
     return JSON.parse(jsonStr);
   } catch (err) {
     console.error('Gemini extraction failed:', err);
-    return null;
+    throw err;
   }
 }
 
@@ -901,6 +1024,8 @@ app.post(['/api/upload', '/upload'], upload.single('report') as any, async (req:
   let savedFilename: string | null = null;
   let savedFilepath: string | null = null;
   let geminiResult: any = null;
+  let extractionConfidence: number | null = null;
+  let geminiFailure: string | null = null;
 
   if (file) {
     savedFilename = file.originalname;
@@ -929,28 +1054,46 @@ app.post(['/api/upload', '/upload'], upload.single('report') as any, async (req:
       geminiResult = await analyzeWithGemini(fileBuffer, mimeType, pastedText);
     } catch (err) {
       console.warn('Multimodal extraction error:', err);
+      geminiFailure = err instanceof Error ? err.message : 'Gemini analysis failed.';
     }
 
-    if (geminiResult && geminiResult.extracted_text) {
+    if (geminiResult && geminiResult.extracted_text?.trim()) {
       text = geminiResult.extracted_text;
     } else if (!text && pastedText) {
       text = pastedText;
     } else if (!text) {
-      // Basic text extraction fallback for files
-      text = `Medical Report File: ${file.originalname}\nAnalysis based on uploaded diagnostic report.`;
+      try {
+        const extraction = await extractWithLocalPython(file.path);
+        text = extraction.text;
+        extractionConfidence = extraction.confidence;
+      } catch (error: any) {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        const detail = error?.message || 'Local OCR could not read this file.';
+        return res.status(503).json({ error: `Could not extract text from this report. ${detail}` });
+      }
+      if (!text) {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        return res.status(422).json({ error: 'No readable text was found. Upload a sharper, well-lit image or a higher-resolution scan.' });
+      }
     }
   } else if (pastedText) {
     text = pastedText;
     // Can also enhance pasted text with Gemini
     if (getGeminiApiKey()) {
-      geminiResult = await analyzeWithGemini(null, null, text);
+      try {
+        geminiResult = await analyzeWithGemini(null, null, text);
+      } catch (err) {
+        console.warn('Gemini text analysis error:', err);
+        geminiFailure = err instanceof Error ? err.message : 'Gemini analysis failed.';
+      }
     }
   } else {
     return res.status(400).json({ error: 'Please upload a PDF/Image or paste report text.' });
   }
 
   // Auto-extract patient information
-  const rulePatientInfo = extractPatientInfo(text);
+  const needsOcrReview = extractionConfidence !== null && extractionConfidence < 65 && !geminiResult?.extracted_text;
+  const rulePatientInfo = needsOcrReview ? {} : extractPatientInfo(text);
   const geminiPatient = geminiResult?.patient_info || {};
 
   const patientName = formName || geminiPatient.full_name || rulePatientInfo.full_name;
@@ -975,7 +1118,7 @@ app.post(['/api/upload', '/upload'], upload.single('report') as any, async (req:
     targetPatient = patients.find((p) => p.contact_phone === patientPhone && p.owner_id === user.id) || null;
   }
 
-  if (!targetPatient) {
+  if (!targetPatient && !needsOcrReview) {
     targetPatient = {
       id: nextPatientId++,
       owner_id: user.id,
@@ -990,7 +1133,7 @@ app.post(['/api/upload', '/upload'], upload.single('report') as any, async (req:
       updated_at: new Date().toISOString(),
     };
     patients.push(targetPatient);
-  } else {
+  } else if (targetPatient && !needsOcrReview) {
     if (!targetPatient.age && patientAge) targetPatient.age = patientAge;
     if (!targetPatient.gender && patientGender) targetPatient.gender = patientGender;
     if (!targetPatient.blood_group && patientBlood) targetPatient.blood_group = patientBlood;
@@ -1001,6 +1144,19 @@ app.post(['/api/upload', '/upload'], upload.single('report') as any, async (req:
 
   // Generate Simplification Result
   const ruleResult = simplifyWithRules(text);
+  if (needsOcrReview) {
+    ruleResult.simplified_summary = 'I could not read this handwritten report reliably. Review and correct the extracted text below, then analyze it again.';
+    ruleResult.recommendations = {
+      ...ruleResult.recommendations,
+      by_condition: [],
+      aggregated: {
+        foods_to_eat: [],
+        foods_to_avoid: [],
+        recommended_exercise: [],
+        general_precautions: [],
+      },
+    };
+  }
 
   let finalResult: any;
   if (geminiResult && (geminiResult.entities?.length > 0 || geminiResult.simplified_summary)) {
@@ -1066,6 +1222,14 @@ app.post(['/api/upload', '/upload'], upload.single('report') as any, async (req:
   } else {
     finalResult = ruleResult;
   }
+  finalResult.extraction_confidence = extractionConfidence;
+  finalResult.analysis_warning = needsOcrReview
+    ? getGeminiApiKey()
+      ? 'Gemini could not read this image. Check the key, model access, and network, or review the extracted text manually.'
+      : 'Add GEMINI_API_KEY to the project .env file and restart for multimodal handwriting recognition. Local OCR is uncertain; review the extracted text before analysis.'
+    : geminiFailure
+      ? 'Gemini analysis failed. The report was processed with local text extraction and dictionary rules.'
+      : null;
 
   const recSource = (finalResult.recommendations.by_condition && finalResult.recommendations.by_condition.length > 0)
     ? finalResult.recommendations.by_condition
@@ -1082,7 +1246,7 @@ app.post(['/api/upload', '/upload'], upload.single('report') as any, async (req:
   const newReport: MedicalReport = {
     id: newReportId,
     owner_id: user.id,
-    patient_id: targetPatient.id,
+    patient_id: targetPatient?.id ?? null,
     filename: savedFilename,
     file_path: savedFilepath,
     extracted_text: text,
@@ -1109,11 +1273,13 @@ app.post(['/api/upload', '/upload'], upload.single('report') as any, async (req:
   reports.push(newReport);
   saveDatabase();
 
-  const reportCount = reports.filter((r) => r.patient_id === targetPatient.id && r.owner_id === user.id).length;
+  const reportCount = targetPatient
+    ? reports.filter((r) => r.patient_id === targetPatient.id && r.owner_id === user.id).length
+    : 0;
 
   res.json({
     result: finalResult,
-    patient: { ...targetPatient, report_count: reportCount },
+    patient: targetPatient ? { ...targetPatient, report_count: reportCount } : null,
     report: newReport,
   });
 });

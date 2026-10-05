@@ -132,50 +132,15 @@ function GoogleIcon({ size = 18 }) {
 
 function AuthView({ onAuthenticated }) {
   const [registering, setRegistering] = useState(false);
-  const [googleEnabled, setGoogleEnabled] = useState(true);
-  const [googleAccount, setGoogleAccount] = useState({
-    email: 'akash.saravanan1797@gmail.com',
-    name: 'Akash Saravanan',
-  });
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [customGoogleEmail, setCustomGoogleEmail] = useState('');
+  const [googleEnabled, setGoogleEnabled] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api('/api/auth/config')
-      .then((config) => {
-        setGoogleEnabled(config.google_enabled !== false);
-        if (config.google_email) {
-          setGoogleAccount({
-            email: config.google_email,
-            name: config.display_name || config.google_email.split('@')[0],
-          });
-        }
-      })
+      .then((config) => setGoogleEnabled(config.google_enabled === true))
       .catch(() => {});
   }, []);
-
-  const handleGoogleSignIn = async (emailToUse, nameToUse) => {
-    setError('');
-    setBusy(true);
-    try {
-      const email = emailToUse || googleAccount.email;
-      const name = nameToUse || googleAccount.name;
-      const result = await api('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, display_name: name }),
-      });
-      setShowGoogleModal(false);
-      onAuthenticated(result);
-      go('/dashboard');
-    } catch (err) {
-      setError(err.message || 'Google sign-in failed.');
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -229,15 +194,10 @@ function AuthView({ onAuthenticated }) {
 
           {googleEnabled && (
             <>
-              <button
-                type="button"
-                className="button google-auth-button wide"
-                onClick={() => setShowGoogleModal(true)}
-                disabled={busy}
-              >
+              <a className="button google-auth-button wide" href="/auth/google">
                 <GoogleIcon size={18} />
                 <span>Continue with Google</span>
-              </button>
+              </a>
               <div className="or"><span>or with email</span></div>
             </>
           )}
@@ -284,72 +244,6 @@ function AuthView({ onAuthenticated }) {
           </p>
         </form>
 
-        {showGoogleModal && (
-          <div
-            className="result-overlay"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setShowGoogleModal(false);
-            }}
-          >
-            <div className="modal google-modal" role="dialog" aria-modal="true">
-              <button
-                type="button"
-                className="close"
-                onClick={() => setShowGoogleModal(false)}
-                aria-label="Close"
-              >
-                <X size={16} />
-              </button>
-
-              <div className="google-modal-header">
-                <GoogleIcon size={34} />
-                <h3>Sign in with Google</h3>
-                <p>Choose an account to continue to AI Report Simplifier</p>
-              </div>
-
-              <div className="google-account-list">
-                <button
-                  type="button"
-                  className="google-account-item"
-                  onClick={() => handleGoogleSignIn(googleAccount.email, googleAccount.name)}
-                  disabled={busy}
-                >
-                  <div className="google-avatar-circle">
-                    {googleAccount.name ? googleAccount.name[0].toUpperCase() : 'G'}
-                  </div>
-                  <div className="google-account-details">
-                    <div className="google-account-name">
-                      {googleAccount.name}
-                      <span className="google-badge">Active Google ID</span>
-                    </div>
-                    <div className="google-account-email">{googleAccount.email}</div>
-                  </div>
-                </button>
-              </div>
-
-              <div className="google-custom-form">
-                <label>
-                  Use a different Google account:
-                  <input
-                    type="email"
-                    placeholder="e.g. name@gmail.com"
-                    value={customGoogleEmail}
-                    onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                    disabled={busy}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="button primary wide"
-                  disabled={busy || !customGoogleEmail.trim().includes('@')}
-                  onClick={() => handleGoogleSignIn(customGoogleEmail.trim(), customGoogleEmail.split('@')[0])}
-                >
-                  {busy ? 'Signing in...' : 'Sign in with this Google account'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </section>
     </main>
   );
@@ -475,6 +369,20 @@ function Dashboard() {
     }
   };
 
+  const reanalyzeCorrectedText = async (text) => {
+    setBusy(true);
+    const data = new FormData();
+    data.set('report_text', text);
+    data.set('report_title', result?.report?.filename || 'Corrected OCR report');
+    try {
+      const response = await api('/api/upload', { method: 'POST', body: data });
+      setResult(response);
+      return response;
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const scrollToUpload = (e) => {
     if (e) e.preventDefault();
     const el = document.getElementById('upload');
@@ -581,15 +489,24 @@ function Dashboard() {
         </aside>
       </section>
 
-      {result && <ResultView response={result} onClose={() => setResult(null)} />}
+      {result && <ResultView response={result} onClose={() => setResult(null)} onReanalyze={reanalyzeCorrectedText} />}
     </>
   );
 }
 
-function ResultView({ response, onClose }) {
+function ResultView({ response, onClose, onReanalyze }) {
   const result = response.result || {};
   const patient = response.patient || {};
-  const [showRaw, setShowRaw] = useState(false);
+  const extractedText = result.original_text || response.report?.extracted_text || '';
+  const needsOcrReview = typeof result.extraction_confidence === 'number' && result.extraction_confidence < 65;
+  const [showRaw, setShowRaw] = useState(needsOcrReview);
+  const [draftText, setDraftText] = useState(extractedText);
+  const [reanalysisError, setReanalysisError] = useState('');
+  const [reanalysisBusy, setReanalysisBusy] = useState(false);
+
+  useEffect(() => {
+    setDraftText(extractedText);
+  }, [extractedText]);
 
   const handlePrint = () => {
     window.print();
@@ -600,7 +517,17 @@ function ResultView({ response, onClose }) {
   const foodsToAvoid = result.recommendations?.aggregated?.foods_to_avoid || [];
   const exercises = result.recommendations?.aggregated?.recommended_exercise || [];
   const precautions = result.recommendations?.aggregated?.general_precautions || [];
-  const extractedText = result.original_text || response.report?.extracted_text || '';
+  const submitCorrectedText = async () => {
+    setReanalysisError('');
+    setReanalysisBusy(true);
+    try {
+      await onReanalyze(draftText);
+    } catch (error) {
+      setReanalysisError(error.message || 'Could not reanalyze the corrected text.');
+    } finally {
+      setReanalysisBusy(false);
+    }
+  };
 
   return (
     <div className="result-overlay">
@@ -644,6 +571,11 @@ function ResultView({ response, onClose }) {
         {/* Plain-Language Clinical Summary */}
         <div className="result-section">
           <h3 className="section-heading"><Sparkles size={16} /> Plain-Language Clinical Summary</h3>
+          {needsOcrReview && (
+            <div className="alert warning" role="status">
+              {result.analysis_warning || `OCR confidence is ${result.extraction_confidence}%. Please verify the handwritten text before relying on this summary.`}
+            </div>
+          )}
           <div className="result-summary">
             {result.simplified_summary || 'No medical terms detected.'}
           </div>
@@ -670,15 +602,23 @@ function ResultView({ response, onClose }) {
         {/* Nutrition & Activity Guidance */}
         <div className="result-section">
           <h3 className="section-heading"><ShieldCheck size={16} /> Nutrition & Lifestyle Guidance</h3>
-          <div className="recommend-grid">
-            <Recommendation title="Foods to Prioritize" values={foodsToEat} />
-            <Recommendation title="Foods to Limit" values={foodsToAvoid} />
-            <Recommendation title="Movement & Physical Activity" values={exercises} />
-          </div>
-          {precautions.length > 0 && (
-            <div className="precautions-box">
-              <strong>Precautions & Care Notes:</strong> {precautions.join(' · ')}
+          {needsOcrReview ? (
+            <div className="alert warning" role="status">
+              Recommendations are paused until the report text is corrected and analyzed.
             </div>
+          ) : (
+            <>
+              <div className="recommend-grid">
+                <Recommendation title="Foods to Prioritize" values={foodsToEat} />
+                <Recommendation title="Foods to Limit" values={foodsToAvoid} />
+                <Recommendation title="Movement & Physical Activity" values={exercises} />
+              </div>
+              {precautions.length > 0 && (
+                <div className="precautions-box">
+                  <strong>Precautions & Care Notes:</strong> {precautions.join(' · ')}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -706,7 +646,29 @@ function ResultView({ response, onClose }) {
               </button>
             </div>
             <div className={`extracted-content ${showRaw ? 'open' : 'preview'}`}>
-              <pre>{extractedText}</pre>
+              {showRaw ? (
+                <>
+                  <label htmlFor="corrected-ocr-text">Review and correct extracted text</label>
+                  <textarea
+                    id="corrected-ocr-text"
+                    value={draftText}
+                    onChange={(event) => setDraftText(event.target.value)}
+                    rows={8}
+                    style={{ width: '100%', resize: 'vertical', marginTop: '8px' }}
+                  />
+                  {needsOcrReview && (
+                    <button
+                      type="button"
+                      className="button primary small no-print"
+                      onClick={submitCorrectedText}
+                      disabled={reanalysisBusy || !draftText.trim()}
+                    >
+                      {reanalysisBusy ? 'Reanalyzing...' : 'Analyze corrected text'}
+                    </button>
+                  )}
+                  {reanalysisError && <div className="alert error" role="alert">{reanalysisError}</div>}
+                </>
+              ) : <pre>{extractedText}</pre>}
             </div>
           </div>
         )}

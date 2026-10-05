@@ -41,7 +41,7 @@
       "contact_email": "karuna.chauhan@example.com",
       "contact_phone": "+91 98401 23456",
       "created_at": "2026-09-21T09:09:26.000Z",
-      "updated_at": "2026-09-24T05:09:45.965Z"
+      "updated_at": "2026-10-05T08:41:24.638Z"
     },
     {
       "id": 2,
@@ -133,6 +133,58 @@
       "contact_phone": "+1-555-0143",
       "created_at": "2026-09-19T16:40:00.000Z",
       "updated_at": "2026-09-19T16:40:00.000Z"
+    },
+    {
+      "id": 18,
+      "owner_id": 3,
+      "patient_code": "PAT-2026-8X7M",
+      "full_name": "Patient Record",
+      "age": null,
+      "gender": null,
+      "blood_group": null,
+      "contact_phone": null,
+      "contact_email": null,
+      "created_at": "2026-10-05T08:02:09.806Z",
+      "updated_at": "2026-10-05T08:02:09.806Z"
+    },
+    {
+      "id": 19,
+      "owner_id": 3,
+      "patient_code": "PAT-2026-BCNA",
+      "full_name": "Patient Record",
+      "age": 3,
+      "gender": null,
+      "blood_group": null,
+      "contact_phone": null,
+      "contact_email": null,
+      "created_at": "2026-10-05T08:02:56.981Z",
+      "updated_at": "2026-10-05T08:02:56.981Z"
+    },
+    {
+      "id": 20,
+      "owner_id": 3,
+      "patient_code": "PAT-2026-Y4RM",
+      "full_name": "Mr. Adhiya",
+      "age": 20,
+      "gender": "Male",
+      "blood_group": null,
+      "contact_phone": "9597236431",
+      "contact_email": null,
+      "created_at": "2026-10-05T08:42:15.778Z",
+      "updated_at": "2026-10-05T08:42:15.778Z"
+    },
+    {
+      "id": 21,
+      "owner_id": 3,
+      "patient_code": "PAT-2026-C3HF",
+      "full_name": "Vivek S",
+      "age": 19,
+      "gender": "Male",
+      "blood_group": null,
+      "contact_phone": null,
+      "contact_email": null,
+      "created_at": "2026-10-05T08:45:20.825Z",
+      "updated_at": "2026-10-05T08:45:20.825Z"
     }
   ],
   "reports": [
@@ -613,11 +665,402 @@
           "exercise_precautions": "Begin each workout session with dynamic warming stretches."
         }
       ]
+    },
+    {
+      "id": 19,
+      "owner_id": 3,
+      "patient_id": 18,
+      "filename": "WhatsApp Image 2026-09-24 at 9.42.00 AM.jpeg",
+      "file_path": "D:\\AI-Based_Friendly_Report_Simplifier-main\\uploads\\1791187327636-WhatsApp_Image_2026-09-24_at_9.42.00_AM.jpeg",
+      "extracted_text": "Ih STITUTE\n\noF TECH\n\n45\n\n(a\n\n2) BANNAR AM\n\n2\n\nMAN\n\nyarnangdha® ~”\n\n{7\n\nMEDICAL CENTRE\n\n{917\n\nPt's Name ur - Ad jo\n\n+2\n\npase\n\n207 ¢ 4 Sie\n\noD\n\nT\n\nbh B\n\nag\n\n[77\n\nDBs #104 on\n\n=\n\n2.764%\n\nriper\n\nZs\n\nMppintt © 2\n\n4\n\nDL\n\nToler /4\n\n= 7\n\nFr\n\nEc\n\nJ\n\nZL\n\n4\n\n€\n\nTe Fem\n\nBe 7\n\n= = 7\n\n=\n\n4\n\ner\n\n&\n\niD CIETY : ; 3",
+      "simplified_text": "No specific medical terms detected.",
+      "created_at": "2026-10-05T08:02:09.807Z",
+      "entities": [],
+      "recommendations": [
+        {
+          "id": 19,
+          "report_id": 19,
+          "condition_name": "Clinical Guidance",
+          "foods_to_eat": [
+            "Fresh fruits and vegetables",
+            "Whole grains and legumes",
+            "Adequate daily water intake"
+          ],
+          "foods_to_avoid": [
+            "Excessive sodium and refined sugars",
+            "Deep-fried and heavily processed foods"
+          ],
+          "recommended_exercise": [
+            "30 minutes of moderate physical activity (like walking) 5 days a week"
+          ],
+          "exercise_precautions": "Listen to your body and consult your doctor before changes."
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "owner_id": 3,
+      "patient_id": 19,
+      "filename": "WhatsApp Image 2026-09-21 at 9.09.26 AM.jpeg",
+      "file_path": "D:\\AI-Based_Friendly_Report_Simplifier-main\\uploads\\1791187375355-WhatsApp_Image_2026-09-21_at_9.09.26_AM.jpeg",
+      "extracted_text": "atta aad«n\n\nDr. Sanjeev Saxena\n\nsl.\n\nMBBS, SMO,\n\nWAH ny\n\nwd A on, grea a\n\nNo. 18819\n\n=ftee fiftsrm svar\n\nDICAL OFFICER\n\nnen shade fyerveyn, win\n\nMAMHARAQ BHIV SINGH HOSPITAL, KOTA\n\nMOB. : 94141-35560\n\ni: 04141-28500\n\nY\n\nName\n\nFarung chtmbom\n\nSex\n\nAge 3B\n\nDate\n\n13/7/24\n\nPy r en pPa10? 102)\n\nR\n\nhrscly | (amine\n\nRe\n\n5h\n\n)3e)d0\n\nipo NC\n\n- AM\n\nshor ¢8°)\n\n(sp Roz p\n\n—\n\n| 82\n\n-T\n\nPrbulex\n\n| om pt\n\nT\n\nPei) Poe\n\n{oD\n\nT\n\nloCi oa\n\ngeoret\n\nbio\n\nwp 1°\n\n-\n\nwot\n\nped ]oxt oA1Z¢\n\nfellow for\n\npnett\n\nFEA\n\nua fr om\n\nRr -10810\n\n1-J-26, VIGYAN NAGAR, KOTA 324005 (RAJ.)",
+      "simplified_text": "No specific medical terms detected.",
+      "created_at": "2026-10-05T08:02:56.982Z",
+      "entities": [],
+      "recommendations": [
+        {
+          "id": 20,
+          "report_id": 20,
+          "condition_name": "Clinical Guidance",
+          "foods_to_eat": [
+            "Fresh fruits and vegetables",
+            "Whole grains and legumes",
+            "Adequate daily water intake"
+          ],
+          "foods_to_avoid": [
+            "Excessive sodium and refined sugars",
+            "Deep-fried and heavily processed foods"
+          ],
+          "recommended_exercise": [
+            "30 minutes of moderate physical activity (like walking) 5 days a week"
+          ],
+          "exercise_precautions": "Listen to your body and consult your doctor before changes."
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "owner_id": 3,
+      "patient_id": null,
+      "filename": "WhatsApp Image 2026-09-21 at 9.09.26 AM.jpeg",
+      "file_path": "D:\\AI-Based_Friendly_Report_Simplifier-main\\uploads\\1791188799398-WhatsApp_Image_2026-09-21_at_9.09.26_AM.jpeg",
+      "extracted_text": "atta aad«n\n\nDr. Sanjeev Saxena\n\nsl.\n\nMBBS, SMO,\n\nWAH ny\n\nwd A on, grea a\n\nNo. 18819\n\n=ftee fiftsrm svar\n\nDICAL OFFICER\n\nnen shade fyerveyn, win\n\nMAMHARAQ BHIV SINGH HOSPITAL, KOTA\n\nMOB. : 94141-35560\n\ni: 04141-28500\n\nY\n\nName\n\nFarung chtmbom\n\nSex\n\nAge 3B\n\nDate\n\n13/7/24\n\nPy r en pPa10? 102)\n\nR\n\nhrscly | (amine\n\nRe\n\n5h\n\n)3e)d0\n\nipo NC\n\n- AM\n\nshor ¢8°)\n\n(sp Roz p\n\n—\n\n| 82\n\n-T\n\nPrbulex\n\n| om pt\n\nT\n\nPei) Poe\n\n{oD\n\nT\n\nloCi oa\n\ngeoret\n\nbio\n\nwp 1°\n\n-\n\nwot\n\nped ]oxt oA1Z¢\n\nfellow for\n\npnett\n\nFEA\n\nua fr om\n\nRr -10810\n\n1-J-26, VIGYAN NAGAR, KOTA 324005 (RAJ.)",
+      "simplified_text": "I could not read this handwritten report reliably. Review and correct the extracted text below, then analyze it again.",
+      "created_at": "2026-10-05T08:26:41.162Z",
+      "entities": [],
+      "recommendations": [
+        {
+          "id": 25,
+          "report_id": 24,
+          "condition_name": "Clinical Guidance",
+          "foods_to_eat": [],
+          "foods_to_avoid": [],
+          "recommended_exercise": [],
+          "exercise_precautions": ""
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "owner_id": 3,
+      "patient_id": null,
+      "filename": "WhatsApp Image 2026-09-21 at 9.09.26 AM.jpeg",
+      "file_path": "D:\\AI-Based_Friendly_Report_Simplifier-main\\uploads\\1791189480445-WhatsApp_Image_2026-09-21_at_9.09.26_AM.jpeg",
+      "extracted_text": "atta aad«n\n\nDr. Sanjeev Saxena\n\nsl.\n\nMBBS, SMO,\n\nWAH ny\n\nwd A on, grea a\n\nNo. 18819\n\n=ftee fiftsrm svar\n\nDICAL OFFICER\n\nnen shade fyerveyn, win\n\nMAMHARAQ BHIV SINGH HOSPITAL, KOTA\n\nMOB. : 94141-35560\n\ni: 04141-28500\n\nY\n\nName\n\nFarung chtmbom\n\nSex\n\nAge 3B\n\nDate\n\n13/7/24\n\nPy r en pPa10? 102)\n\nR\n\nhrscly | (amine\n\nRe\n\n5h\n\n)3e)d0\n\nipo NC\n\n- AM\n\nshor ¢8°)\n\n(sp Roz p\n\n—\n\n| 82\n\n-T\n\nPrbulex\n\n| om pt\n\nT\n\nPei) Poe\n\n{oD\n\nT\n\nloCi oa\n\ngeoret\n\nbio\n\nwp 1°\n\n-\n\nwot\n\nped ]oxt oA1Z¢\n\nfellow for\n\npnett\n\nFEA\n\nua fr om\n\nRr -10810\n\n1-J-26, VIGYAN NAGAR, KOTA 324005 (RAJ.)",
+      "simplified_text": "I could not read this handwritten report reliably. Review and correct the extracted text below, then analyze it again.",
+      "created_at": "2026-10-05T08:38:02.844Z",
+      "entities": [],
+      "recommendations": [
+        {
+          "id": 26,
+          "report_id": 25,
+          "condition_name": "Clinical Guidance",
+          "foods_to_eat": [],
+          "foods_to_avoid": [],
+          "recommended_exercise": [],
+          "exercise_precautions": ""
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "owner_id": 3,
+      "patient_id": 1,
+      "filename": "WhatsApp Image 2026-09-21 at 9.09.26 AM.jpeg",
+      "file_path": "D:\\AI-Based_Friendly_Report_Simplifier-main\\uploads\\1791189677022-WhatsApp_Image_2026-09-21_at_9.09.26_AM.jpeg",
+      "extracted_text": "डॉ. संजीव सक्सेना, एम.बी.एस., एस.एम.ओ., रजि न. 18819, वरिष्ठ चिकित्सा अधिकारी, महाराव भीमसिंह चिकित्सालय, कोटा, मो.: 94141-86586. Dr. Sanjeev Saxena, M.B.B.S., S.M.O., Reg. No. 18819, SENIOR MEDICAL OFFICER, MAHARAO BHIM SINGH HOSPITAL, KOTA, MOB.: 94141-86586. Name: Karuna Chauhan, Sex: F, Age: 36, Date: 17/7/24. BP: 130/90, SpO2: 98%. Anxiety/Gastric. Rx: Cap. Rozad-100 AC 7 AM, T. Ambulax 1 BD, T. Pathil Plus 1 OHS, T. Plocida 1 OD, T. Eropet 40 1 OD 6 PM. Diet, Walk/Exercise. Follow for 1 Month. 1-J-26, VIGYAN NAGAR, KOTA 324005 (RAJ.)",
+      "simplified_text": "Your doctor has diagnosed you with symptoms related to anxiety and gastric issues. Your blood pressure (130/90) is slightly elevated, so it is good to keep an eye on that. The prescribed medicines are to help calm your anxiety and soothe your stomach. Please follow the medication schedule as noted. Try to eat smaller, balanced meals and incorporate a gentle daily walk. You should follow up with your doctor in one month to see how you are feeling.",
+      "created_at": "2026-10-05T08:41:24.640Z",
+      "entities": [
+        {
+          "id": 57,
+          "report_id": 26,
+          "entity_text": "Anxiety",
+          "entity_label": "DISEASE",
+          "explanation": "This refers to feeling uneasy, worried, or nervous about things, which can sometimes manifest as physical symptoms."
+        },
+        {
+          "id": 58,
+          "report_id": 26,
+          "entity_text": "Gastric",
+          "entity_label": "DISEASE",
+          "explanation": "This typically refers to stomach issues, such as acidity, indigestion, or discomfort in the digestive tract."
+        },
+        {
+          "id": 59,
+          "report_id": 26,
+          "entity_text": "Rozad-100",
+          "entity_label": "MEDICINE",
+          "explanation": "This medication is often prescribed to manage cholesterol levels or as a preventive measure for heart health."
+        },
+        {
+          "id": 60,
+          "report_id": 26,
+          "entity_text": "Ambulax",
+          "entity_label": "MEDICINE",
+          "explanation": "This is often used to treat symptoms of anxiety and related mood conditions."
+        },
+        {
+          "id": 61,
+          "report_id": 26,
+          "entity_text": "Pathil Plus",
+          "entity_label": "MEDICINE",
+          "explanation": "This medication is generally used to help manage acidity and gastric discomfort."
+        },
+        {
+          "id": 62,
+          "report_id": 26,
+          "entity_text": "Plocida",
+          "entity_label": "MEDICINE",
+          "explanation": "This is commonly used for the treatment of various stomach-related acid issues."
+        },
+        {
+          "id": 63,
+          "report_id": 26,
+          "entity_text": "Eropet",
+          "entity_label": "MEDICINE",
+          "explanation": "This is often used to treat specific stomach conditions or acid-related digestive problems."
+        },
+        {
+          "id": 64,
+          "report_id": 26,
+          "entity_text": "eropet 40",
+          "entity_label": "MEDICINE",
+          "explanation": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist."
+        },
+        {
+          "id": 65,
+          "report_id": 26,
+          "entity_text": "BP: 130/90",
+          "entity_label": "LAB_TERM",
+          "explanation": "Blood pressure — the force of blood moving through your blood vessels."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 27,
+          "report_id": 26,
+          "condition_name": "Anxiety",
+          "foods_to_eat": [
+            "Regular balanced meals with vegetables, whole grains, and lean protein",
+            "Drink water and avoid skipping meals"
+          ],
+          "foods_to_avoid": [
+            "Excess caffeine (coffee, energy drinks, or strong tea) if it worsens anxiety",
+            "Alcohol or calming supplements unless your clinician approves them"
+          ],
+          "recommended_exercise": [
+            "Brisk walking or another comfortable activity, starting gradually",
+            "Gentle stretching, yoga, or breathing exercises for relaxation"
+          ],
+          "exercise_precautions": "Stop activity and seek medical advice for chest pain, fainting, or unusual shortness of breath. New or severe symptoms should be discussed with a clinician."
+        },
+        {
+          "id": 28,
+          "report_id": 26,
+          "condition_name": "Gastric",
+          "foods_to_eat": [
+            "Oats and other whole grains, if tolerated",
+            "Yogurt or other probiotic-rich foods, if tolerated",
+            "Lean proteins such as chicken or fish",
+            "Fresh fruits and vegetables that do not trigger symptoms"
+          ],
+          "foods_to_avoid": [
+            "Spicy or fried foods if they worsen your symptoms",
+            "Caffeine or alcohol if they worsen your symptoms",
+            "Large meals close to bedtime if they worsen reflux"
+          ],
+          "recommended_exercise": [
+            "Gentle walking for 20-30 minutes, as tolerated",
+            "Avoid vigorous activity immediately after eating"
+          ],
+          "exercise_precautions": "Food triggers vary. Avoid only foods that worsen your symptoms, and ask your clinician about persistent stomach discomfort."
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "owner_id": 3,
+      "patient_id": 20,
+      "filename": "WhatsApp Image 2026-09-24 at 9.42.00 AM.jpeg",
+      "file_path": "D:\\AI-Based_Friendly_Report_Simplifier-main\\uploads\\1791189720444-WhatsApp_Image_2026-09-24_at_9.42.00_AM.jpeg",
+      "extracted_text": "BANNARI AMMAN INSTITUTE OF TECHNOLOGY MEDICAL CENTRE\nDate: 23/9/26\nPt's Name: Mr. Adhiya\nAge: 20y\nSex: M\nBP: 115/66\nT: 99\nSpO2: 99%\nPR: 96\nRx Danochloan - 9597236431\nT. Moxikind 625 (1-0-1)\nT. Dolonil Plus (1-0-1)\nT. Cetirizine (0-0-1)\nT. Pantokind (1-0-0)\nElectrolyte pwd (1-0-1)",
+      "simplified_text": "You visited the medical center and your vital signs (blood pressure, oxygen levels, and pulse) appear to be within or near a stable range, though you had a slight fever (temperature of 99°F). The doctor has prescribed a course of antibiotics, pain relief, allergy medicine, and stomach protection. Please follow the dosage schedule provided by the doctor (e.g., 1-0-1 means taking the medication once in the morning and once at night). Make sure to complete the full course of antibiotics even if you feel better. If you develop a rash or breathing difficulty, please contact your doctor immediately.",
+      "created_at": "2026-10-05T08:42:15.779Z",
+      "entities": [
+        {
+          "id": 66,
+          "report_id": 27,
+          "entity_text": "Moxikind 625",
+          "entity_label": "MEDICINE",
+          "explanation": "This is an antibiotic used to treat bacterial infections."
+        },
+        {
+          "id": 67,
+          "report_id": 27,
+          "entity_text": "Dolonil Plus",
+          "entity_label": "MEDICINE",
+          "explanation": "A medication often used to help reduce pain, fever, and inflammation."
+        },
+        {
+          "id": 68,
+          "report_id": 27,
+          "entity_text": "Cetirizine",
+          "entity_label": "MEDICINE",
+          "explanation": "An antihistamine used to relieve allergy symptoms like sneezing, itching, or a runny nose."
+        },
+        {
+          "id": 69,
+          "report_id": 27,
+          "entity_text": "Pantokind",
+          "entity_label": "MEDICINE",
+          "explanation": "A medication to reduce stomach acid, often prescribed to protect the stomach while taking other drugs."
+        },
+        {
+          "id": 70,
+          "report_id": 27,
+          "entity_text": "Electrolyte pwd",
+          "entity_label": "MEDICINE",
+          "explanation": "A powder used to replenish fluids and essential minerals in your body, especially if you have been feeling unwell."
+        },
+        {
+          "id": 71,
+          "report_id": 27,
+          "entity_text": "BP: 115/66",
+          "entity_label": "LAB_TERM",
+          "explanation": "Blood pressure — the force of blood moving through your blood vessels."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 29,
+          "report_id": 27,
+          "condition_name": "Clinical Guidance",
+          "foods_to_eat": [
+            "Warm soups and broths",
+            "Easily digestible foods like rice or toast",
+            "Plenty of water and fluids",
+            "Fresh fruits and vegetables",
+            "Whole grains and legumes",
+            "Adequate daily water intake"
+          ],
+          "foods_to_avoid": [
+            "Spicy or heavy fried foods",
+            "Cold drinks or ice cream",
+            "Excessive sodium and refined sugars",
+            "Deep-fried and heavily processed foods"
+          ],
+          "recommended_exercise": [
+            "Light walking if you have energy",
+            "Gentle stretching",
+            "30 minutes of moderate physical activity (like walking) 5 days a week"
+          ],
+          "exercise_precautions": "Avoid heavy exertion or intense workouts until your fever is gone and you have completed your medication course. Listen to your body and rest as much as possible."
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "owner_id": 3,
+      "patient_id": 21,
+      "filename": "WhatsApp Image 2026-09-21 at 9.09.27 AM.jpeg",
+      "file_path": "D:\\AI-Based_Friendly_Report_Simplifier-main\\uploads\\1791189912519-WhatsApp_Image_2026-09-21_at_9.09.27_AM.jpeg",
+      "extracted_text": "Adichunchanagiri University, Adichunchanagiri Institute of Medical Sciences, Hospital & Research Centre, Balagangadharanatha Nagara-571 448. Date: 22/12/22. Name: Vivek S (19/M). UHID/IP No: 10193. c/o giddiness, restlessness. Imp: hypoglycemic (RBS-50 mg/dl). O/E-BP-110/70, PR-60bpm. Adv: 10% Dextrose (iv) stat. -> Adequate fluid intake. -> ORS 2 sachets.",
+      "simplified_text": "At your visit on 22/12/22, you were feeling dizzy and restless. Tests showed your blood sugar was quite low (50 mg/dl). To fix this, you were given an IV of Dextrose for a quick boost. Moving forward, make sure to drink plenty of fluids and use the ORS sachets as directed to stay hydrated. Always keep snacks handy to prevent your blood sugar from dropping low again. Please ask your doctor what caused this episode and what signs you should watch for to prevent it in the future.",
+      "created_at": "2026-10-05T08:45:20.825Z",
+      "entities": [
+        {
+          "id": 72,
+          "report_id": 28,
+          "entity_text": "giddiness",
+          "entity_label": "SYMPTOM",
+          "explanation": "A feeling of being lightheaded or dizzy, often related to low blood sugar."
+        },
+        {
+          "id": 73,
+          "report_id": 28,
+          "entity_text": "restlessness",
+          "entity_label": "SYMPTOM",
+          "explanation": "Feeling anxious or unable to relax, which can be a response to low blood sugar levels."
+        },
+        {
+          "id": 74,
+          "report_id": 28,
+          "entity_text": "hypoglycemic",
+          "entity_label": "DISEASE",
+          "explanation": "This means your blood sugar level is lower than what your body needs to function normally."
+        },
+        {
+          "id": 75,
+          "report_id": 28,
+          "entity_text": "RBS 50 mg/dl",
+          "entity_label": "LAB_TERM",
+          "explanation": "This is a random blood sugar test result showing 50 mg/dl, which is considered low (hypoglycemia)."
+        },
+        {
+          "id": 76,
+          "report_id": 28,
+          "entity_text": "10% Dextrose",
+          "entity_label": "MEDICINE",
+          "explanation": "A sugar solution given through an IV to quickly increase the amount of sugar in your blood."
+        },
+        {
+          "id": 77,
+          "report_id": 28,
+          "entity_text": "ORS",
+          "entity_label": "MEDICINE",
+          "explanation": "Oral Rehydration Salts help replace fluids and electrolytes lost in the body."
+        },
+        {
+          "id": 78,
+          "report_id": 28,
+          "entity_text": "BP: 110/70",
+          "entity_label": "LAB_TERM",
+          "explanation": "Blood pressure — the force of blood moving through your blood vessels."
+        }
+      ],
+      "recommendations": [
+        {
+          "id": 30,
+          "report_id": 28,
+          "condition_name": "Clinical Guidance",
+          "foods_to_eat": [
+            "Fresh fruits like bananas or apples",
+            "Whole grain bread or crackers",
+            "Small frequent meals containing complex carbohydrates",
+            "Fresh fruits and vegetables",
+            "Whole grains and legumes",
+            "Adequate daily water intake"
+          ],
+          "foods_to_avoid": [
+            "Empty sugary snacks like candies or soda",
+            "High-caffeine drinks that might trigger restlessness",
+            "Excessive sodium and refined sugars",
+            "Deep-fried and heavily processed foods"
+          ],
+          "recommended_exercise": [
+            "Light walking when feeling stable",
+            "Gentle stretching",
+            "30 minutes of moderate physical activity (like walking) 5 days a week"
+          ],
+          "exercise_precautions": "Do not exercise if you are feeling dizzy or weak. Always carry a fast-acting sugar source (like a glucose tablet or fruit juice) while exercising."
+        }
+      ]
     }
   ],
-  "nextUserId": 6,
-  "nextPatientId": 10,
-  "nextReportId": 9,
-  "nextEntityId": 25,
-  "nextRecId": 6
+  "nextUserId": 7,
+  "nextPatientId": 22,
+  "nextReportId": 29,
+  "nextEntityId": 79,
+  "nextRecId": 31
 }

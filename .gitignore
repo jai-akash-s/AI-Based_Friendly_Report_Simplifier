@@ -17,11 +17,13 @@ venv/
 .mypy_cache/
 
 # React build output and dependencies
+/node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/test-results/
 
 # Generated files
+/eng.traineddata
 *.pdf
 uploads/*
 node_modules

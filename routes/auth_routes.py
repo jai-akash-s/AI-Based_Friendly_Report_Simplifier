@@ -269,7 +269,7 @@ def google_callback():
         if not email:
             return render_template("login.html", error="Google did not return an email address.")
         sign_in_user(email, user_info.get("name"), "google")
-        return redirect(url_for("auth.entrypoint"))
+        return redirect(os.environ.get("FRONTEND_URL", "http://127.0.0.1:3000"))
     except Exception as error:
         current_app.logger.exception("Google OAuth callback failed: %s", error)
         return render_template(
