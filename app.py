@@ -5,6 +5,7 @@ from routes.upload_routes import upload_bp
 from routes.report_routes import report_bp
 from routes.patient_routes import patient_bp
 from routes.auth_routes import auth_bp, init_oauth
+from services.medicine_lookup import refresh_medicine_index
 
 import os
 from sqlalchemy import inspect, text
@@ -42,6 +43,7 @@ def ensure_database_schema():
         ("medical_reports", "owner_id", "INTEGER"),
         ("medical_reports", "title", "VARCHAR(255)"),
         ("medical_reports", "lab_results", "TEXT"),
+        ("medical_reports", "medicine_results", "TEXT"),
         ("users", "password_hash", "VARCHAR(255)"),
         ("users", "role", "VARCHAR(30)"),
     ]
@@ -57,6 +59,7 @@ def ensure_database_schema():
 
 with app.app_context():
     ensure_database_schema()
+    refresh_medicine_index()
 
 
 @app.before_request

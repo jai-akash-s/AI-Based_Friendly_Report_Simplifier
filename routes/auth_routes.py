@@ -10,7 +10,9 @@ from urllib.parse import urlencode
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from authlib.integrations.flask_client import OAuth
-from database.models import AuditLog, User, db
+from database.models import AuditLog, MedicalReport, Patient, User, db
+from services.privacy import delete_report_file
+from sqlalchemy import or_
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -305,3 +307,38 @@ def login_required(view):
         return view(*args, **kwargs)
 
     return wrapped_view
+
+
+@auth_bp.route("/api/account", methods=["DELETE"])
+@login_required
+def delete_account():
+    user = get_current_user()
+    patients = Patient.query.filter_by(owner_id=user.id).all()
+    patient_ids = [patient.id for patient in patients]
+    report_query = MedicalReport.query
+    if patient_ids:
+        reports = report_query.filter(
+            or_(
+                MedicalReport.owner_id == user.id,
+                MedicalReport.patient_id.in_(patient_ids),
+            )
+        ).all()
+    else:
+        reports = report_query.filter_by(owner_id=user.id).all()
+
+    for report in reports:
+        try:
+            delete_report_file(report.file_path, current_app.config["UPLOAD_FOLDER"])
+        except OSError as error:
+            current_app.logger.error("Account deletion could not remove a report file: %s", error)
+            return jsonify({"error": "Unable to securely delete all report files. No account data was removed."}), 500
+
+    for report in reports:
+        db.session.delete(report)
+    for patient in patients:
+        db.session.delete(patient)
+    AuditLog.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    db.session.delete(user)
+    db.session.commit()
+    session.clear()
+    return jsonify({"deleted": True})

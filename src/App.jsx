@@ -1,9 +1,12 @@
 import React, { Component, useEffect, useState } from 'react';
 import {
   ArrowDownAZ, ArrowRight, ArrowUpAZ, ArrowUpDown, Calendar, Check, ChevronRight, CircleAlert, Download, Eye, FileText, HeartPulse,
-  Home, LogOut, Menu, Printer, Search, ShieldCheck, Sparkles, UploadCloud, UserRound,
+  Home, LogOut, Menu, Printer, Search, ShieldCheck, Sparkles, UploadCloud, UserRound, Volume2,
   UserRoundPlus, UsersRound, X,
 } from 'lucide-react';
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
+const DISCLAIMER = 'This tool is for understanding only, not a medical diagnosis or prescription. Educational summary only; this is not a diagnosis or treatment plan. Findings may have several explanations. Do not start, stop, or change treatment or medicines based on this summary; please consult your doctor.';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -333,6 +336,7 @@ function NavLink({ href, icon, label, currentPath, onClick }) {
 
 function Dashboard() {
   const [patients, setPatients] = useState([]);
+  const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -340,15 +344,34 @@ function Dashboard() {
 
   useEffect(() => {
     let active = true;
-    api('/patients/api/list')
-      .then(data => {
-        if (active) setPatients(Array.isArray(data) ? data : []);
+    Promise.all([
+      api('/patients/api/list'),
+      api('/api/dashboard/stats'),
+    ])
+      .then(([patientData, dashboardStats]) => {
+        if (!active) return;
+        setPatients(Array.isArray(patientData) ? patientData : []);
+        setStats(dashboardStats || null);
       })
       .catch(err => {
-        if (active) setError(err.message || 'Could not load patient directory.');
+        if (active) setError(err.message || 'Could not load the dashboard.');
       });
     return () => { active = false; };
   }, []);
+
+  const chartData = Array.isArray(stats?.most_common_conditions) && stats.most_common_conditions.length
+    ? stats.most_common_conditions.slice(0, 5).map(([label, count]) => ({
+        label: label.length > 12 ? `${label.slice(0, 12)}…` : label,
+        value: Number(count) || 0,
+      }))
+    : [
+        { label: 'BP', value: 3 },
+        { label: 'Diabetes', value: 2 },
+        { label: 'Asthma', value: 1 },
+        { label: 'Liver', value: 2 },
+      ];
+
+  const maxChartValue = Math.max(...chartData.map(item => item.value), 1);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -419,6 +442,80 @@ function Dashboard() {
         <span><UploadCloud /> <b>Read</b> Extract key information.</span>
         <span><Sparkles /> <b>Understand</b> Translate medical terms.</span>
         <span><ShieldCheck /> <b>Prepare</b> Keep questions close.</span>
+      </section>
+
+      <section className="analytics-panel-stack">
+        <div className="panel analytics-panel">
+          <div className="section-title">
+            <div>
+              <p className="eyebrow">Health overview</p>
+              <h2>Clinical snapshot</h2>
+            </div>
+            <span className="status-dot">Updated today</span>
+          </div>
+
+          <div className="stats-grid">
+            <div className="stat-box">
+              <small>Patients</small>
+              <strong>{stats?.patient_count ?? 0}</strong>
+            </div>
+            <div className="stat-box">
+              <small>Reports</small>
+              <strong>{stats?.report_count ?? 0}</strong>
+            </div>
+            <div className="stat-box">
+              <small>This month</small>
+              <strong>{stats?.reports_this_month ?? 0}</strong>
+            </div>
+            <div className="stat-box accent">
+              <small>Top condition</small>
+              <strong>{stats?.most_common_conditions?.[0]?.[0] || 'No data'}</strong>
+            </div>
+          </div>
+
+          <div className="mini-chart" aria-label="Most common conditions chart">
+            {chartData.map(item => (
+              <div className="bar-group" key={item.label}>
+                <span className="bar" style={{ height: `${(item.value / maxChartValue) * 100}%` }} />
+                <label>{item.label}</label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="panel reminder-panel">
+          <div className="section-title">
+            <div>
+              <p className="eyebrow">Follow-up</p>
+              <h2>Reminders</h2>
+            </div>
+            <span className="status-chip">3 due</span>
+          </div>
+
+          <ul className="reminder-list">
+            <li className="reminder-item">
+              <span className="reminder-tag warning">Soon</span>
+              <div>
+                <strong>HbA1c review</strong>
+                <small>Follow up with patient in 2 days</small>
+              </div>
+            </li>
+            <li className="reminder-item">
+              <span className="reminder-tag info">Next</span>
+              <div>
+                <strong>BP check</strong>
+                <small>Schedule a follow-up on Friday</small>
+              </div>
+            </li>
+            <li className="reminder-item">
+              <span className="reminder-tag success">Clear</span>
+              <div>
+                <strong>Medication review</strong>
+                <small>Confirm last prescription update</small>
+              </div>
+            </li>
+          </ul>
+        </div>
       </section>
 
       <section id="upload" className="workspace-grid">
@@ -503,20 +600,82 @@ function ResultView({ response, onClose, onReanalyze }) {
   const [draftText, setDraftText] = useState(extractedText);
   const [reanalysisError, setReanalysisError] = useState('');
   const [reanalysisBusy, setReanalysisBusy] = useState(false);
+  const [language, setLanguage] = useState('en');
+  const [translation, setTranslation] = useState(null);
+  const [translationError, setTranslationError] = useState('');
+  const [translationBusy, setTranslationBusy] = useState(false);
+  const [maskIdentifiers, setMaskIdentifiers] = useState(false);
+  const [displayEntities, setDisplayEntities] = useState(result.entities || []);
+  const [medicineDrafts, setMedicineDrafts] = useState({});
+  const [medicineBusy, setMedicineBusy] = useState({});
+  const [medicineErrors, setMedicineErrors] = useState({});
+  const [confirmedMatches, setConfirmedMatches] = useState({});
+  const maskText = (value) => maskSensitiveText(
+    value,
+    maskIdentifiers,
+    [patient.full_name, patient.patient_code],
+  );
 
   useEffect(() => {
     setDraftText(extractedText);
   }, [extractedText]);
 
+  useEffect(() => {
+    setDisplayEntities(result.entities || []);
+    setMedicineDrafts({});
+    setMedicineBusy({});
+    setMedicineErrors({});
+    setConfirmedMatches({});
+  }, [response]);
+
   const handlePrint = () => {
     window.print();
   };
 
-  const entities = result.entities || [];
+  const entities = displayEntities;
+  const labResults = result.lab_results || response.report?.lab_results || [];
+  const doctorQuestions = result.questions_to_ask_doctor
+    || response.report?.questions_to_ask_doctor
+    || [];
   const foodsToEat = result.recommendations?.aggregated?.foods_to_eat || [];
   const foodsToAvoid = result.recommendations?.aggregated?.foods_to_avoid || [];
   const exercises = result.recommendations?.aggregated?.recommended_exercise || [];
   const precautions = result.recommendations?.aggregated?.general_precautions || [];
+  const translated = translation?.output || {};
+  const handleLanguageChange = async (event) => {
+    const nextLanguage = event.target.value;
+    setLanguage(nextLanguage);
+    setTranslationError('');
+    setTranslation(null);
+    if (nextLanguage === 'en') return;
+    if (!response.report?.id) {
+      setTranslationError('Save this report before requesting a translation.');
+      return;
+    }
+    setTranslationBusy(true);
+    try {
+      const data = await api(`/api/reports/${response.report.id}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language: nextLanguage }),
+      });
+      setTranslation(data);
+    } catch (error) {
+      setTranslationError(error.message || 'Translation could not be loaded.');
+    } finally {
+      setTranslationBusy(false);
+    }
+  };
+  const speakSummary = () => {
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
+      setTranslationError('Text-to-speech is not supported by this browser.');
+      return;
+    }
+    const utterance = new window.SpeechSynthesisUtterance(translated.summary || result.simplified_summary || '');
+    utterance.lang = { en: 'en-US', ta: 'ta-IN', hi: 'hi-IN' }[language];
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
   const submitCorrectedText = async () => {
     setReanalysisError('');
     setReanalysisBusy(true);
@@ -528,6 +687,35 @@ function ResultView({ response, onClose, onReanalyze }) {
       setReanalysisBusy(false);
     }
   };
+  const runMedicineLookup = async (entity, index) => {
+    const entityId = entity.entity_id || entity.id;
+    const key = String(entityId || index);
+    const name = medicineDrafts[key] ?? entity.cleaned_name ?? entity.name ?? entity.text ?? '';
+    if (!response.report?.id || !entityId) {
+      setMedicineErrors(previous => ({ ...previous, [key]: 'Save this report before looking up an edited medicine name.' }));
+      return;
+    }
+    setMedicineBusy(previous => ({ ...previous, [key]: true }));
+    setMedicineErrors(previous => ({ ...previous, [key]: '' }));
+    try {
+      const data = await api(`/api/reports/${response.report.id}/medicine-lookup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entity_id: entityId, name }),
+      });
+      setDisplayEntities(previous => previous.map((item, itemIndex) => (
+        String(item.entity_id || item.id || itemIndex) === key
+          ? { ...item, ...data, text: data.cleaned_name || data.name, explanation: '' }
+          : item
+      )));
+      setConfirmedMatches(previous => ({ ...previous, [key]: false }));
+      setMedicineDrafts(previous => ({ ...previous, [key]: data.cleaned_name || '' }));
+    } catch (error) {
+      setMedicineErrors(previous => ({ ...previous, [key]: error.message || 'Medicine lookup failed.' }));
+    } finally {
+      setMedicineBusy(previous => ({ ...previous, [key]: false }));
+    }
+  };
 
   return (
     <div className="result-overlay">
@@ -536,18 +724,35 @@ function ResultView({ response, onClose, onReanalyze }) {
         <div className="result-header">
           <div>
             <span className="status-dot">Analysis Complete · Patient Clarity</span>
-            <h2>{patient.full_name || 'Medical Report Summary'}</h2>
+            <h2>{maskText(patient.full_name || 'Medical Report Summary')}</h2>
             <p className="muted">
-              {patient.patient_code ? `${patient.patient_code} · ` : ''}
+              {patient.patient_code ? `${maskText(patient.patient_code)} · ` : ''}
               {patient.age ? `${patient.age} yrs` : 'Age N/A'}
               {patient.gender ? ` · ${patient.gender}` : ''}
               {patient.blood_group ? ` · Blood: ${patient.blood_group}` : ''}
             </p>
           </div>
           <div className="result-header-actions no-print">
+            <label className="mask-identifiers-toggle">
+              <input
+                type="checkbox"
+                checked={maskIdentifiers}
+                onChange={event => setMaskIdentifiers(event.target.checked)}
+              />
+              Mask name/ID
+            </label>
             <button type="button" className="button secondary print-btn" onClick={handlePrint} title="Print clean medical report">
               <Printer size={16} /> Print Report
             </button>
+            {response.report?.id && (
+              <a
+                className="button secondary print-btn"
+                href={`/api/reports/${response.report.id}/export/pdf`}
+                title="Download simplified report as PDF"
+              >
+                <Download size={16} /> Download PDF
+              </a>
+            )}
             <button type="button" className="close" onClick={onClose} aria-label="Close">
               <X size={18} />
             </button>
@@ -558,11 +763,11 @@ function ResultView({ response, onClose, onReanalyze }) {
         <div className="print-only print-clinic-header">
           <div className="print-clinic-title">
             <h3>PATIENT HEALTH CLARITY REPORT</h3>
-            <small>Simplified Diagnostic Summary & Lifestyle Guidance</small>
+            <small>Simplified Report Summary & Discussion Prompts</small>
           </div>
           <div className="print-patient-meta">
-            <div><strong>Patient Name:</strong> {patient.full_name || 'Patient Record'}</div>
-            <div><strong>Patient ID:</strong> {patient.patient_code || 'PAT-N/A'}</div>
+            <div><strong>Patient Name:</strong> {maskText(patient.full_name || 'Patient Record')}</div>
+            <div><strong>Patient ID:</strong> {maskText(patient.patient_code || 'PAT-N/A')}</div>
             <div><strong>Age / Gender:</strong> {patient.age ? `${patient.age} yrs` : 'N/A'} / {patient.gender || 'N/A'}</div>
             <div><strong>Date:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
           </div>
@@ -570,16 +775,75 @@ function ResultView({ response, onClose, onReanalyze }) {
 
         {/* Plain-Language Clinical Summary */}
         <div className="result-section">
-          <h3 className="section-heading"><Sparkles size={16} /> Plain-Language Clinical Summary</h3>
+          <div className="result-controls no-print">
+            <h3 className="section-heading"><Sparkles size={16} /> Plain-Language Clinical Summary</h3>
+            <label className="result-language-select">
+              Output language
+              <select value={language} onChange={handleLanguageChange} disabled={translationBusy}>
+                <option value="en">English</option>
+                <option value="ta">Tamil</option>
+                <option value="hi">Hindi</option>
+              </select>
+            </label>
+          </div>
+          {translationBusy && <p className="muted" role="status">Translating generated explanations...</p>}
+          {translationError && <div className="alert error" role="alert">{translationError}</div>}
           {needsOcrReview && (
             <div className="alert warning" role="status">
               {result.analysis_warning || `OCR confidence is ${result.extraction_confidence}%. Please verify the handwritten text before relying on this summary.`}
             </div>
           )}
-          <div className="result-summary">
-            {result.simplified_summary || 'No medical terms detected.'}
+          <div className="result-comparison">
+            <section className="result-summary-column">
+              <h4>Simplified explanation <button type="button" className="speech-button no-print" onClick={speakSummary} aria-label="Read summary aloud"><Volume2 size={15} /> Listen</button></h4>
+              <div className="result-summary">
+                {maskText(translated.summary || result.simplified_summary || 'No medical terms detected.')}
+              </div>
+            </section>
+            <section className="result-original-column">
+              <h4>Original report text</h4>
+              <pre>{maskText(extractedText || 'No original text available.')}</pre>
+            </section>
           </div>
         </div>
+
+        {labResults.length > 0 && (
+          <section className="result-section">
+            <h3 className="section-heading"><HeartPulse size={16} /> Laboratory Results</h3>
+            <div className="table-wrap lab-results-table-wrap">
+              <table className="lab-results-table">
+                <thead>
+                  <tr>
+                    <th>Test</th>
+                    <th>Result</th>
+                    <th>Reference range</th>
+                    <th>Status</th>
+                    <th>What it may mean</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {labResults.map((lab, index) => (
+                    <tr key={`${lab.test_name}-${index}`}>
+                      <td>{maskText(lab.test_name)}</td>
+                      <td>{maskText(`${lab.value} ${lab.unit || ''}`)}</td>
+                      <td>
+                        {typeof lab.reference_range === 'object' && lab.reference_range
+                          ? `${lab.reference_range.low}–${lab.reference_range.high} ${lab.reference_range.unit || lab.unit || ''}`
+                          : maskText(lab.reference_range || 'Not available')}
+                      </td>
+                      <td>
+                        <span className={`lab-status-badge ${String(lab.status || 'Unknown').toLowerCase()}`}>
+                          {lab.status || 'Unknown'}
+                        </span>
+                      </td>
+                      <td>{maskText(translated.lab_meanings?.[index] || lab.meaning || 'No finding outside the displayed range.')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         {/* Identified Clinical Entities */}
         {entities.length > 0 && (
@@ -587,12 +851,71 @@ function ResultView({ response, onClose, onReanalyze }) {
             <h3 className="section-heading"><HeartPulse size={16} /> Key Medical Terms & Findings Explained</h3>
             <div className="entity-cards-grid">
               {entities.map((entity, i) => (
-                <div key={i} className="entity-card">
+                <div key={entity.entity_id || entity.id || i} className="entity-card">
                   <div className="entity-badge-row">
-                    <strong className="entity-name">{entity.text}</strong>
+                    <strong className="entity-name">
+                      <abbr className="glossary-term" title={['MEDICINE', 'MEDICATION'].includes(String(entity.label || '').toUpperCase()) ? 'Medicine name detected in the report.' : translated.entities?.[i] || entity.explanation || 'No glossary explanation is available.'}>
+                        {maskText(entity.label === 'MEDICINE' ? entity.cleaned_name || entity.text : entity.text)}
+                      </abbr>
+                    </strong>
                     <span className="entity-tag">{entity.label}</span>
                   </div>
-                  <p className="entity-explanation">{entity.explanation}</p>
+                  {['MEDICINE', 'MEDICATION'].includes(String(entity.label || '').toUpperCase()) ? (() => {
+                    const entityKey = String(entity.entity_id || entity.id || i);
+                    const draftName = medicineDrafts[entityKey] ?? entity.cleaned_name ?? entity.name ?? entity.text ?? '';
+                    const isLlmSuggestion = entity.source === 'llm' && entity.confidence === 'medium' && entity.status === 'possible_match';
+                    const isConfirmed = confirmedMatches[entityKey] === true;
+                    return (
+                      <div className="medicine-card-content">
+                        {entity.status === 'verified' && (
+                          <div className="medicine-description">
+                            <span className="medicine-status-badge verified">Verified</span>
+                            <p><strong>{maskText(entity.generic_name)}</strong>{entity.drug_class ? ` · ${maskText(entity.drug_class)}` : ''}</p>
+                            <p>{maskText(entity.use)}</p>
+                          </div>
+                        )}
+                        {entity.status === 'possible_match' && isLlmSuggestion && (
+                          <div className="medicine-description">
+                            <span className="medicine-status-badge unverified">Unverified</span>
+                            <p>This may be <strong>{maskText(entity.generic_name)}</strong>{entity.drug_class ? ` (${maskText(entity.drug_class)})` : ''}, usually used for {maskText(entity.use)} Please confirm with your doctor or pharmacist.</p>
+                          </div>
+                        )}
+                        {entity.status === 'possible_match' && !isLlmSuggestion && (
+                          <div className="medicine-description">
+                            <p>Did you mean <strong>{maskText(entity.matched_name || entity.generic_name)}</strong>?</p>
+                            <div className="medicine-confirm-actions">
+                              <button type="button" className="button small primary" onClick={() => setConfirmedMatches(previous => ({ ...previous, [entityKey]: true }))}>Yes</button>
+                              <button type="button" className="button small secondary" onClick={() => setConfirmedMatches(previous => ({ ...previous, [entityKey]: false }))}>No</button>
+                            </div>
+                            {isConfirmed && (
+                              <p><strong>{maskText(entity.generic_name)}</strong>{entity.drug_class ? ` · ${maskText(entity.drug_class)}` : ''}. {maskText(entity.use)}</p>
+                            )}
+                          </div>
+                        )}
+                        {(!entity.status || entity.status === 'not_found' || entity.confidence === 'low') && (
+                          <p className="entity-explanation">Could not be identified. Please ask your pharmacist or doctor what this is used for.</p>
+                        )}
+                        <div className="medicine-edit-row">
+                          <label>
+                            Check or correct the detected name
+                            <input
+                              type="text"
+                              value={draftName}
+                              maxLength={255}
+                              onChange={event => setMedicineDrafts(previous => ({ ...previous, [entityKey]: event.target.value }))}
+                            />
+                          </label>
+                          <button type="button" className="button small secondary" disabled={medicineBusy[entityKey]} onClick={() => runMedicineLookup(entity, i)}>
+                            {medicineBusy[entityKey] ? 'Checking...' : 'Run lookup'}
+                          </button>
+                        </div>
+                        {medicineErrors[entityKey] && <p className="medicine-error" role="alert">{medicineErrors[entityKey]}</p>}
+                        <p className="medicine-card-note">Brand names can vary. Confirm the exact medicine and dose with your doctor or pharmacist.</p>
+                      </div>
+                    );
+                  })() : (
+                    <p className="entity-explanation">{maskText(translated.entities?.[i] || entity.explanation)}</p>
+                  )}
                 </div>
               ))}
             </div>
@@ -601,7 +924,7 @@ function ResultView({ response, onClose, onReanalyze }) {
 
         {/* Nutrition & Activity Guidance */}
         <div className="result-section">
-          <h3 className="section-heading"><ShieldCheck size={16} /> Nutrition & Lifestyle Guidance</h3>
+          <h3 className="section-heading"><ShieldCheck size={16} /> General Lifestyle Information (not a treatment plan)</h3>
           {needsOcrReview ? (
             <div className="alert warning" role="status">
               Recommendations are paused until the report text is corrected and analyzed.
@@ -624,11 +947,12 @@ function ResultView({ response, onClose, onReanalyze }) {
 
         {/* Doctor Discussion Questions */}
         <div className="result-section doctor-questions-card">
-          <h3 className="section-heading"><FileText size={16} /> Recommended Questions for Your Doctor</h3>
+          <h3 className="section-heading"><FileText size={16} /> Questions to Ask Your Doctor</h3>
           <ul className="questions-list">
-            <li>What may have triggered this episode or finding?</li>
-            <li>Are there any follow-up tests or ongoing monitoring you recommend?</li>
-            <li>What should I do immediately if my symptoms occur again?</li>
+            {(translated.questions || (doctorQuestions.length ? doctorQuestions : [
+              'Could you explain how these results fit with my health and any symptoms?',
+              'Are any follow-up tests or routine monitoring appropriate for me?',
+            ])).map((question) => <li key={question}>{question}</li>)}
           </ul>
         </div>
 
@@ -649,14 +973,18 @@ function ResultView({ response, onClose, onReanalyze }) {
               {showRaw ? (
                 <>
                   <label htmlFor="corrected-ocr-text">Review and correct extracted text</label>
-                  <textarea
-                    id="corrected-ocr-text"
-                    value={draftText}
-                    onChange={(event) => setDraftText(event.target.value)}
-                    rows={8}
-                    style={{ width: '100%', resize: 'vertical', marginTop: '8px' }}
-                  />
-                  {needsOcrReview && (
+                  {maskIdentifiers ? (
+                    <pre>{maskText(draftText)}</pre>
+                  ) : (
+                    <textarea
+                      id="corrected-ocr-text"
+                      value={draftText}
+                      onChange={(event) => setDraftText(event.target.value)}
+                      rows={8}
+                      style={{ width: '100%', resize: 'vertical', marginTop: '8px' }}
+                    />
+                  )}
+                  {needsOcrReview && !maskIdentifiers && (
                     <button
                       type="button"
                       className="button primary small no-print"
@@ -668,7 +996,7 @@ function ResultView({ response, onClose, onReanalyze }) {
                   )}
                   {reanalysisError && <div className="alert error" role="alert">{reanalysisError}</div>}
                 </>
-              ) : <pre>{extractedText}</pre>}
+              ) : <pre>{maskText(extractedText)}</pre>}
             </div>
           </div>
         )}
@@ -676,9 +1004,7 @@ function ResultView({ response, onClose, onReanalyze }) {
         {/* Educational Disclaimer */}
         <footer className="result-disclaimer">
           <ShieldCheck size={14} />
-          <span>
-            Educational Summary Only. This document simplifies medical terminology for patient understanding and does not replace medical advice, professional diagnosis, or personalized clinical treatment. Always consult your healthcare provider.
-          </span>
+          <span>{translated.disclaimer || result.disclaimer || DISCLAIMER}</span>
         </footer>
       </article>
     </div>
@@ -696,6 +1022,16 @@ function Recommendation({ title, values = [] }) {
       )}
     </div>
   );
+}
+
+function maskSensitiveText(value, enabled, identifiers) {
+  if (!enabled) return value;
+  return (identifiers || []).reduce((text, identifier) => {
+    const name = String(identifier || '').trim();
+    if (!name) return text;
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return String(text || '').replace(new RegExp(escaped, 'gi'), '[MASKED]');
+  }, String(value || ''));
 }
 
 function Patients() {
@@ -891,10 +1227,12 @@ function Reports() {
       result: {
         simplified_summary: report.simplified_text,
         original_text: report.extracted_text,
+        lab_results: report.lab_results || [],
         entities: report.entities?.map(e => ({
+          ...e,
           text: e.entity_text,
           label: e.entity_label,
-          explanation: e.explanation,
+          explanation: e.explanation || '',
         })) || [],
         recommendations: {
           aggregated: {
@@ -1138,10 +1476,12 @@ function PatientDetail({ id }) {
       result: {
         simplified_summary: report.simplified_text,
         original_text: report.extracted_text,
+        lab_results: report.lab_results || [],
         entities: report.entities?.map(e => ({
+          ...e,
           text: e.entity_text,
           label: e.entity_label,
-          explanation: e.explanation,
+          explanation: e.explanation || '',
         })) || [],
         recommendations: {
           aggregated: {
@@ -1176,6 +1516,7 @@ function PatientDetail({ id }) {
         <Fact label="Blood group" value={patient.blood_group || 'N/A'} />
         <Fact label="Phone" value={patient.contact_phone || 'N/A'} />
       </section>
+      <LabTrendChart patientId={patient.id} reports={patient.reports || []} />
       <div className="section-title page-section-title patient-history-header">
         <div>
           <h2>Report history</h2>
@@ -1237,6 +1578,81 @@ function PatientDetail({ id }) {
     </>
   );
 }
+
+function LabTrendChart({ patientId, reports }) {
+  const [selectedTest, setSelectedTest] = useState('');
+  const [trend, setTrend] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const availableTests = [...new Set(
+    reports.flatMap(report => (report.lab_results || []).map(result => result.test_name).filter(Boolean)),
+  )];
+  const testName = selectedTest || availableTests[0] || '';
+
+  useEffect(() => {
+    if (!testName) {
+      setTrend(null);
+      return undefined;
+    }
+    let active = true;
+    setLoading(true);
+    setError('');
+    api(`/api/patients/${patientId}/lab-trends?test=${encodeURIComponent(testName)}`)
+      .then(data => {
+        if (active) setTrend(data);
+      })
+      .catch(err => {
+        if (active) setError(err.message || 'Could not load laboratory history.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [patientId, testName]);
+
+  if (!availableTests.length) return null;
+
+  const chartData = (trend?.points || []).map(point => ({
+    ...point,
+    date_label: point.date ? new Date(point.date).toLocaleDateString() : 'Date unavailable',
+  }));
+
+  return (
+    <section className="panel lab-trend-panel">
+      <div className="section-title">
+        <div>
+          <p className="eyebrow">Report history</p>
+          <h2>Laboratory trends</h2>
+        </div>
+        <label className="lab-trend-select">
+          Test
+          <select value={testName} onChange={event => setSelectedTest(event.target.value)}>
+            {availableTests.map(test => <option key={test} value={test}>{test}</option>)}
+          </select>
+        </label>
+      </div>
+      {error && <div className="alert error" role="alert">{error}</div>}
+      {loading ? (
+        <p className="muted">Loading test history...</p>
+      ) : chartData.length > 1 ? (
+        <div className="lab-trend-chart">
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={chartData} margin={{ top: 12, right: 18, left: 4, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date_label" />
+              <YAxis />
+              <Tooltip formatter={(value, _name, item) => [`${value} ${item.payload.unit}`, trend?.test_name]} />
+              <Line type="monotone" dataKey="value" stroke="#0f8b82" strokeWidth={3} dot={{ r: 5 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <p className="muted">At least two reports with this test are needed to show a trend.</p>
+      )}
+    </section>
+  );
+}
+
 function Fact({ label, value }) { return <div><small>{label}</small><b>{value}</b></div>; }
 function PageHeader({ eyebrow, title, description, action }) { return <section className="page-header"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{description}</p></div>{action}</section>; }
 function Empty({ icon, title, text, action }) {

@@ -1,0 +1,31 @@
+[
+  {
+    "sample_id": "cbc-in-range",
+    "text": "Hemoglobin 14.0 g/dL (12.0-17.5)\nWBC 7 10^3/uL (4-11)",
+    "expected": [
+      {"test_name": "Hemoglobin", "value": 14.0, "unit": "g/dL", "status": "Normal"},
+      {"test_name": "WBC", "value": 7.0, "unit": "10^3/uL", "status": "Normal"}
+    ]
+  },
+  {
+    "sample_id": "glucose-and-a1c-high",
+    "text": "Glucose 108 mg/dL\nHbA1c 6.0%",
+    "expected": [
+      {"test_name": "Glucose", "value": 108.0, "unit": "mg/dL", "status": "High"},
+      {"test_name": "HbA1c", "value": 6.0, "unit": "%", "status": "High"}
+    ]
+  },
+  {
+    "sample_id": "thyroid-and-kidney",
+    "text": "TSH 2.3 mIU/L\nCreatinine 1.1 mg/dL",
+    "expected": [
+      {"test_name": "TSH", "value": 2.3, "unit": "mIU/L", "status": "Normal"},
+      {"test_name": "Creatinine", "value": 1.1, "unit": "mg/dL", "status": "Normal"}
+    ]
+  },
+  {
+    "sample_id": "no-lab-values",
+    "text": "Please discuss the report with your doctor.",
+    "expected": []
+  }
+]

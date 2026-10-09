@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Patients{% endblock %}
+{% block content %}
+  <nav>
+    <strong>AI Report Simplifier</strong>
+    <div class="actions">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/reports">Reports</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="card" style="margin-top: 24px;">
+    <h2>Patients</h2>
+    <a href="/patients/add">Add patient</a>
+    {% if patients %}
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Age</th><th>Gender</th><th>Blood group</th></tr>
+        </thead>
+        <tbody>
+          {% for patient in patients %}
+            <tr>
+              <td><a href="/patients/{{ patient.id }}">{{ patient.full_name }}</a></td>
+              <td>{{ patient.age or 'N/A' }}</td>
+              <td>{{ patient.gender or 'N/A' }}</td>
+              <td>{{ patient.blood_group or 'N/A' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">No patients yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}

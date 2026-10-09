@@ -3,6 +3,8 @@ import json
 import random
 import string
 from flask_sqlalchemy import SQLAlchemy
+from services.doctor_questions import generate_doctor_questions
+from services.medical_safety import enforce_safe_explanation, enforce_safe_summary
 
 db = SQLAlchemy()
 
@@ -106,6 +108,7 @@ class MedicalReport(db.Model):
     patient_id = db.Column(db.Integer, db.ForeignKey("patients.id"), nullable=True)
     title = db.Column(db.String(255), nullable=True)
     lab_results = db.Column(db.Text, nullable=True)
+    medicine_results = db.Column(db.Text, nullable=True)
     filename = db.Column(db.String(255), nullable=True)
     file_path = db.Column(db.String(500), nullable=True)
     extracted_text = db.Column(db.Text, nullable=True)
@@ -121,19 +124,66 @@ class MedicalReport(db.Model):
     )
 
     def to_dict(self):
+        lab_results = safe_json_list(self.lab_results)
+        medicine_results = safe_json_list(self.medicine_results)
+        entities = [entity.to_dict() for entity in self.entities]
+        medicine_results_by_id = {
+            item.get("entity_id"): item
+            for item in medicine_results
+            if item.get("entity_id") is not None
+        }
+        for entity in entities:
+            if str(entity.get("entity_label") or "").upper() not in {"MEDICINE", "MEDICATION"}:
+                continue
+            medicine_result = medicine_results_by_id.get(entity["id"])
+            if medicine_result:
+                entity.update(medicine_result)
+            else:
+                entity.update({
+                    "name": entity["entity_text"],
+                    "cleaned_name": "",
+                    "generic_name": None,
+                    "drug_class": None,
+                    "use": None,
+                    "status": "not_found",
+                    "confidence": "low",
+                    "source": "none",
+                    "note": "Could not identify this medicine. Please ask your doctor or pharmacist what it is used for.",
+                    "matched_name": None,
+                    "needs_confirmation": True,
+                })
         return {
             "id": self.id,
             "patient_id": self.patient_id,
             "title": self.title,
-            "lab_results": safe_json_list(self.lab_results),
+            "lab_results": lab_results,
+            "medicine_results": medicine_results,
+            "questions_to_ask_doctor": generate_doctor_questions(lab_results),
             "filename": self.filename,
             "file_path": self.file_path,
             "extracted_text": self.extracted_text,
-            "simplified_text": self.simplified_text,
+            "simplified_text": enforce_safe_summary(self.simplified_text, entities),
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "entities": [entity.to_dict() for entity in self.entities],
+            "entities": entities,
             "recommendations": [rec.to_dict() for rec in self.recommendations],
         }
+
+
+class MedicineLookupCache(db.Model):
+    __tablename__ = "medicine_lookup_cache"
+
+    cleaned_name = db.Column(db.String(255), primary_key=True)
+    result_json = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
+
+
+class MedicineCatalogEntry(db.Model):
+    __tablename__ = "medicines"
+
+    generic_name = db.Column(db.String(255), primary_key=True)
+    drug_class = db.Column(db.String(255), nullable=False)
+    use = db.Column(db.Text, nullable=False)
+    brands = db.Column(db.Text, nullable=False, default="[]")
 
 
 class MedicalEntity(db.Model):
@@ -146,12 +196,17 @@ class MedicalEntity(db.Model):
     explanation = db.Column(db.Text, nullable=True)
 
     def to_dict(self):
+        is_medicine = str(self.entity_label or "").upper() in {"MEDICINE", "MEDICATION"}
         return {
             "id": self.id,
             "report_id": self.report_id,
             "entity_text": self.entity_text,
             "entity_label": self.entity_label,
-            "explanation": self.explanation,
+            "explanation": (
+                ""
+                if is_medicine
+                else enforce_safe_explanation(self.explanation, self.entity_text)
+            ),
         }
 
 

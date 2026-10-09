@@ -20,6 +20,7 @@ This mirrors exactly what your Gantt chart / architecture slide describes:
 import re
 
 from .ner_extractor import build_nlp, extract_entities, load_dictionary
+from services.medical_safety import enforce_safe_explanation, enforce_safe_summary
 
 _dictionary = load_dictionary()
 _nlp = build_nlp()
@@ -84,8 +85,11 @@ def ai_simplify(term: str, context_sentence: str):
     """Fallback: ask a language model to explain an unknown medical term simply."""
     pipe = _get_hf_pipeline()
     prompt = (
-        f"Explain the medical term '{term}' in one simple sentence "
-        f"for a patient with no medical background. Context: {context_sentence}"
+        f"Define the medical term '{term}' in one simple sentence for a patient. "
+        "This is a definition, not confirmation that the patient has a condition. "
+        "Do not diagnose, prescribe, or recommend treatment. Use cautious wording, "
+        "such as 'may relate to', and advise consulting a doctor. "
+        f"Context: {context_sentence}"
     )
     result = pipe(prompt, max_new_tokens=40)
     return result[0]["generated_text"].strip()
@@ -117,7 +121,7 @@ def _build_plain_language_summary(text: str, entities: list) -> str | None:
     if re.search(r"follow[\s-]*up[^\n]{0,30}(?:1|one)\s*month", text, re.IGNORECASE):
         summary += "The report asks you to follow up in one month."
 
-    return summary.strip()
+    return f"{summary.strip()} Please consult your doctor for interpretation."
 
 
 def generate_recommendations(entities: list, use_ai_fallback: bool = True):
@@ -160,30 +164,6 @@ def generate_recommendations(entities: list, use_ai_fallback: bool = True):
             all_exercise.extend(rec.get("recommended_exercise", []))
             if rec.get("exercise_precautions"):
                 all_precautions.append(rec["exercise_precautions"])
-        elif use_ai_fallback and label == "DISEASE":
-            try:
-                pipe = _get_hf_pipeline()
-                prompt_food = f"Give 2 simple dietary food tips for a patient with {ent['text']}."
-                food_res = pipe(prompt_food, max_new_tokens=40)[0]["generated_text"].strip()
-
-                prompt_ex = f"Give 1 simple safe exercise tip for a patient with {ent['text']}."
-                ex_res = pipe(prompt_ex, max_new_tokens=40)[0]["generated_text"].strip()
-
-                cond_data = {
-                    "condition": ent["text"].title(),
-                    "foods_to_eat": [food_res] if food_res else ["Balanced nutrient-rich diet"],
-                    "foods_to_avoid": ["Highly processed foods and excessive sugar"],
-                    "recommended_exercise": [ex_res] if ex_res else ["Light walking for 30 minutes daily"],
-                    "exercise_precautions": "Consult your physician before beginning exercise."
-                }
-                by_condition.append(cond_data)
-                all_eat.extend(cond_data["foods_to_eat"])
-                all_avoid.extend(cond_data["foods_to_avoid"])
-                all_exercise.extend(cond_data["recommended_exercise"])
-                all_precautions.append(cond_data["exercise_precautions"])
-            except Exception:
-                pass
-
     def _dedupe(lst):
         seen = set()
         res = []
@@ -207,7 +187,10 @@ def generate_recommendations(entities: list, use_ai_fallback: bool = True):
             "recommended_exercise": _dedupe(all_exercise),
             "general_precautions": _dedupe(all_precautions)
         },
-        "disclaimer": "Medical Disclaimer: These dietary and exercise suggestions are provided for general educational purposes only. Always consult a qualified physician or healthcare professional before making any significant changes to your diet, medication, or physical activity routine."
+        "disclaimer": (
+            "General lifestyle information only, not a diagnosis or treatment plan. "
+            "Please consult your doctor before changing diet, medication, or activity."
+        )
     }
 
 
@@ -226,12 +209,12 @@ def simplify_report(text: str, use_ai_fallback: bool = True):
     enriched = []
     medication_detected = False
     for ent in entities:
-        explanation = lookup_term(ent["text"])
-        source = "dictionary"
-        confidence = "High"
-        if ent["label"] in {"MEDICINE", "MEDICATION"}:
+        is_medicine = ent["label"] in {"MEDICINE", "MEDICATION"}
+        explanation = "" if is_medicine else lookup_term(ent["text"])
+        source = "medicine_lookup_pending" if is_medicine else "dictionary"
+        confidence = "Low" if is_medicine else "High"
+        if is_medicine:
             medication_detected = True
-
         if explanation is None:
             if use_ai_fallback:
                 explanation = ai_simplify(ent["text"], text)
@@ -250,10 +233,18 @@ def simplify_report(text: str, use_ai_fallback: bool = True):
             "confidence": confidence,
         })
 
-    summary_lines = [f"- {e['text'].title()} ({e['label']}): {e['explanation']}" for e in enriched]
+    summary_lines = [
+        f"The report mentions {entity['text']}. This may need interpretation in context. "
+        "Please consult your doctor."
+        for entity in enriched
+    ]
     simplified_summary = _build_plain_language_summary(text, entities)
     if simplified_summary is None:
         simplified_summary = "\n".join(summary_lines) if summary_lines else "No medical terms detected."
+    simplified_summary = enforce_safe_summary(simplified_summary, enriched)
+    for entity in enriched:
+        if entity["label"] not in {"MEDICINE", "MEDICATION"}:
+            entity["explanation"] = enforce_safe_explanation(entity["explanation"], entity["text"])
 
     recommendations = generate_recommendations(entities, use_ai_fallback=use_ai_fallback)
 

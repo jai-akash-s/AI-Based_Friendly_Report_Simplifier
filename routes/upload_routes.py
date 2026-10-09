@@ -9,6 +9,9 @@ from core.gemini_analyzer import GeminiAnalysisError, analyze_medical_report
 from core.simplifier import simplify_report
 from core.patient_extractor import extract_patient_info
 from core.lab_extractor import extract_lab_results
+from services.doctor_questions import generate_doctor_questions
+from services.medical_safety import DISCLAIMER, enforce_safe_explanation, enforce_safe_summary
+from services.medicine_lookup import lookup_medicine
 from database.models import db, Patient, MedicalReport, MedicalEntity, Recommendation
 from routes.auth_routes import get_current_user, log_audit, login_required
 
@@ -232,7 +235,10 @@ def upload():
                 merged_entities.append({
                     "text": entity_text,
                     "label": entity.get("label", "SYMPTOM"),
-                    "explanation": entity.get("explanation", ""),
+                    "explanation": enforce_safe_explanation(
+                        entity.get("explanation", ""),
+                        entity_text,
+                    ),
                     "source": "gemini_ai",
                     "confidence": "Moderate",
                 })
@@ -242,23 +248,18 @@ def upload():
                     seen_entities.add(key)
                     merged_entities.append(entity)
             result["entities"] = merged_entities
-            result["simplified_summary"] = (
-                gemini_result.get("simplified_summary") or result["simplified_summary"]
+            result["simplified_summary"] = enforce_safe_summary(
+                result.get("simplified_summary"),
+                merged_entities,
             )
 
             recommendations = result["recommendations"]
             aggregated = recommendations["aggregated"]
             has_dictionary_guidance = bool(recommendations.get("by_condition"))
-            for output_key, gemini_key in (
-                ("foods_to_eat", "foods_to_eat"),
-                ("foods_to_avoid", "foods_to_avoid"),
-                ("recommended_exercise", "recommended_exercise"),
-            ):
-                gemini_items = gemini_result.get(gemini_key) or []
+            for output_key in ("foods_to_eat", "foods_to_avoid", "recommended_exercise"):
                 rule_items = aggregated[output_key] if has_dictionary_guidance else []
-                aggregated[output_key] = list(dict.fromkeys([*gemini_items, *rule_items]))
+                aggregated[output_key] = list(dict.fromkeys(rule_items))
             precautions = [
-                gemini_result.get("exercise_precautions", ""),
                 *(aggregated["general_precautions"] if has_dictionary_guidance else []),
             ]
             aggregated["general_precautions"] = list(dict.fromkeys(item for item in precautions if item))
@@ -279,6 +280,35 @@ def upload():
             if needs_ocr_review
             else None
         )
+        result["simplified_summary"] = enforce_safe_summary(
+            result.get("simplified_summary"),
+            result.get("entities", []),
+        )
+        result["disclaimer"] = DISCLAIMER
+        lab_results = extract_lab_results(text)
+        result["lab_results"] = lab_results
+        result["questions_to_ask_doctor"] = generate_doctor_questions(lab_results)
+        medicine_entities = [
+            entity for entity in result.get("entities", [])
+            if str(entity.get("label", "")).upper() in {"MEDICINE", "MEDICATION"}
+        ]
+        other_medicines = [entity.get("text", "") for entity in medicine_entities]
+        conditions = [
+            entity.get("text", "")
+            for entity in result.get("entities", [])
+            if str(entity.get("label", "")).upper() in {"DISEASE", "SYMPTOM"}
+        ]
+        medicine_results = []
+        for entity in medicine_entities:
+            medicine_result = lookup_medicine(
+                entity.get("text", ""),
+                other_medicines=other_medicines,
+                conditions=conditions,
+            )
+            medicine_results.append(medicine_result)
+            entity.update(medicine_result)
+            entity["explanation"] = ""
+        result["medicine_results"] = medicine_results
 
         # Step 4: Save Medical Report record linked to target_patient
         report_record = MedicalReport(
@@ -289,12 +319,14 @@ def upload():
             file_path=saved_filepath,
             extracted_text=text,
             simplified_text=result.get("simplified_summary"),
-            lab_results=json.dumps(extract_lab_results(text)),
+            lab_results=json.dumps(lab_results),
+            medicine_results=json.dumps(medicine_results, ensure_ascii=False),
         )
         db.session.add(report_record)
         db.session.flush()
 
         # Save extracted entities
+        medicine_entities_by_name = {}
         for ent in result.get("entities", []):
             entity_rec = MedicalEntity(
                 report_id=report_record.id,
@@ -303,6 +335,22 @@ def upload():
                 explanation=ent.get("explanation", ""),
             )
             db.session.add(entity_rec)
+            if str(ent.get("label", "")).upper() in {"MEDICINE", "MEDICATION"}:
+                medicine_entities_by_name.setdefault(
+                    str(ent.get("text", "")).casefold(), []
+                ).append((entity_rec, ent))
+
+        db.session.flush()
+        for medicine_result in medicine_results:
+            matching_entities = medicine_entities_by_name.get(
+                str(medicine_result.get("name", "")).casefold(), []
+            )
+            if matching_entities:
+                entity_rec, entity_data = matching_entities.pop(0)
+                medicine_result["entity_id"] = entity_rec.id
+                entity_data["entity_id"] = entity_rec.id
+        report_record.medicine_results = json.dumps(medicine_results, ensure_ascii=False)
+        result["medicine_results"] = medicine_results
 
         # Save recommendations
         recs_data = result.get("recommendations", {})
@@ -322,7 +370,7 @@ def upload():
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error saving patient/report to database: {e}")
-        result = simplify_report(text)
+        result = simplify_report(text, use_ai_fallback=False)
 
     patients = Patient.query.filter_by(owner_id=user.id).order_by(Patient.full_name.asc()).all()
 
@@ -338,4 +386,5 @@ def upload():
         result=result,
         patient=target_patient,
         patients=patients,
+        disclaimer=DISCLAIMER,
     )

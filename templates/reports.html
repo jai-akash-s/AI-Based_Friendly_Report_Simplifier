@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+  <nav>
+    <strong>AI Report Simplifier</strong>
+    <div class="actions">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/patients/">Patients</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="card" style="margin-top: 24px;">
+    <h2>Reports</h2>
+    {% if reports %}
+      <ul>
+        {% for report in reports %}
+          <li>{{ report.title or report.filename or 'Medical report' }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No reports yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}

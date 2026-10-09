@@ -105,6 +105,29 @@ class TestDatabaseModels(unittest.TestCase):
         self.assertEqual(entities[0].entity_text, "Hypertension")
         self.assertEqual(recommendations[0].get_list_field("foods_to_eat"), ["Leafy greens", "Bananas"])
 
+    def test_report_serialization_replaces_unsafe_legacy_generated_text(self):
+        user = User.query.filter_by(email="test@example.com").one()
+        report = MedicalReport(
+            owner_id=user.id,
+            simplified_text="You have diabetes. Take your medication.",
+        )
+        db.session.add(report)
+        db.session.flush()
+        entity = MedicalEntity(
+            report_id=report.id,
+            entity_text="Diabetes",
+            entity_label="DISEASE",
+            explanation="You have this disease. Start treatment.",
+        )
+        db.session.add(entity)
+        db.session.commit()
+
+        serialized = report.to_dict()
+
+        self.assertIn("report mentions Diabetes", serialized["simplified_text"])
+        self.assertNotIn("Take your medication", serialized["simplified_text"])
+        self.assertIn("may depend on context", serialized["entities"][0]["explanation"])
+
     def test_patient_routes(self):
         # GET /patients
         response = self.client.get("/patients/")
@@ -169,7 +192,7 @@ class TestDatabaseModels(unittest.TestCase):
                 {"text": "Anxiety", "label": "DISEASE", "explanation": "A feeling of worry."},
                 {"text": "Gastric", "label": "DISEASE", "explanation": "Stomach-related discomfort."},
             ],
-            "simplified_summary": "Your report mentions anxiety and gastric concerns.",
+            "simplified_summary": "You have diabetes. Take your medication.",
             "foods_to_eat": ["Balanced meals"],
             "foods_to_avoid": ["Foods that worsen symptoms"],
             "recommended_exercise": ["Gentle walking"],
@@ -187,12 +210,20 @@ class TestDatabaseModels(unittest.TestCase):
             result = response.json["result"]
             self.assertEqual(response.json["patient"]["full_name"], "Karuna Chauhan")
             self.assertEqual(response.json["report"]["extracted_text"], gemini_result["extracted_text"])
-            self.assertEqual(result["simplified_summary"], gemini_result["simplified_summary"])
+            self.assertIn("130/90", result["simplified_summary"])
+            self.assertIn("does not diagnose", result["simplified_summary"])
+            self.assertIn("Please consult", result["simplified_summary"])
+            self.assertNotIn("Take your medication", result["simplified_summary"])
+            self.assertIn("Educational summary only", result["disclaimer"])
             self.assertEqual(
                 {entity["text"] for entity in result["entities"]},
                 {"Anxiety", "Gastric", "BP: 130/90"},
             )
-            self.assertIn("Balanced meals", result["recommendations"]["aggregated"]["foods_to_eat"])
+            self.assertNotIn(
+                "Balanced meals",
+                result["recommendations"]["aggregated"]["foods_to_eat"],
+            )
+            self.assertTrue(result["recommendations"]["aggregated"]["foods_to_eat"])
             upload_path = response.json["report"]["file_path"]
             saved_report = db.session.get(MedicalReport, response.json["report"]["id"])
             self.assertEqual(saved_report.owner_id, User.query.filter_by(email="test@example.com").one().id)
@@ -221,11 +252,13 @@ class TestDatabaseModels(unittest.TestCase):
         self.assertEqual(response.json, {"authenticated": False})
         self.assertEqual(self.client.get("/api/auth/session").status_code, 401)
 
-    def test_lab_extraction_does_not_invent_reference_ranges(self):
+    def test_lab_extraction_uses_catalog_reference_ranges_when_missing(self):
         results = extract_lab_results("HbA1c: 7.8%\nLDL: 145 mg/dL")
         self.assertEqual(len(results), 2)
-        self.assertEqual(results[0]["status"], "Unknown")
-        self.assertEqual(results[0]["reference_range"], "Reference range unavailable")
+        self.assertEqual(results[0]["status"], "High")
+        self.assertEqual(results[0]["reference_range"]["source"], "default")
+        self.assertEqual(results[1]["test_name"], "LDL")
+        self.assertEqual(results[1]["status"], "High")
 
     def test_report_search_and_patient_timeline(self):
         response = self.client.post(
@@ -245,6 +278,167 @@ class TestDatabaseModels(unittest.TestCase):
         stats = self.client.get("/api/dashboard/stats")
         self.assertEqual(stats.status_code, 200)
         self.assertEqual(stats.json["reports_this_month"], 1)
+
+    def test_patient_lab_trends_are_test_specific_and_owner_scoped(self):
+        first = self.client.post(
+            "/api/upload",
+            data={"report_text": "Patient Name: Trend Patient\nHemoglobin 11 g/dL (12-16)"},
+        )
+        patient_id = first.json["patient"]["id"]
+        self.client.post(
+            "/api/upload",
+            data={
+                "patient_id": patient_id,
+                "report_text": "Patient Name: Trend Patient\nHemoglobin 13 g/dL (12-16)\nWBC 5 10^3/uL",
+            },
+        )
+
+        trend = self.client.get(
+            f"/api/patients/{patient_id}/lab-trends?test=Hemoglobin"
+        )
+        self.assertEqual(trend.status_code, 200)
+        self.assertEqual(len(trend.json["points"]), 2)
+        self.assertEqual([point["value"] for point in trend.json["points"]], [11.0, 13.0])
+
+        missing_test = self.client.get(f"/api/patients/{patient_id}/lab-trends")
+        self.assertEqual(missing_test.status_code, 400)
+
+        self.client.get("/logout")
+        self.client.post(
+            "/register",
+            data={
+                "email": "trend-owner2@example.com",
+                "password": "password123",
+                "password_confirmation": "password123",
+            },
+        )
+        self.assertEqual(
+            self.client.get(f"/api/patients/{patient_id}/lab-trends?test=Hemoglobin").status_code,
+            404,
+        )
+
+    def test_report_translation_is_owner_scoped_and_uses_generated_text_only(self):
+        uploaded = self.client.post(
+            "/api/upload",
+            data={"report_text": "Patient Name: Translation Patient\nHemoglobin 11 g/dL (12-16)"},
+        )
+        report_id = uploaded.json["report"]["id"]
+        expected_output = {
+            "summary": "Tamil summary",
+            "entities": [],
+            "lab_meanings": ["Tamil meaning"],
+            "questions": ["Tamil question"],
+        }
+        with patch("routes.report_routes.translate_report_output", return_value=expected_output) as translate:
+            response = self.client.post(
+                f"/api/reports/{report_id}/translate",
+                json={"language": "ta"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["output"], expected_output)
+        translated_input = translate.call_args.args[0]
+        self.assertIn("summary", translated_input)
+        self.assertNotIn("Patient Name", str(translated_input))
+        self.assertNotIn("original_text", translated_input)
+
+        self.client.get("/logout")
+        self.client.post(
+            "/register",
+            data={
+                "email": "translation-owner2@example.com",
+                "password": "password123",
+                "password_confirmation": "password123",
+            },
+        )
+        self.assertEqual(
+            self.client.post(
+                f"/api/reports/{report_id}/translate",
+                json={"language": "ta"},
+            ).status_code,
+            404,
+        )
+
+    def test_report_evaluation_endpoint_compares_text_and_labeled_samples(self):
+        uploaded = self.client.post(
+            "/api/upload",
+            data={
+                "report_text": "Hemoglobin 14 g/dL (12-17.5). Please review the result with your doctor."
+            },
+        )
+        report_id = uploaded.json["report"]["id"]
+
+        response = self.client.get(f"/api/reports/{report_id}/evaluation")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("flesch_reading_ease", response.json["readability"]["original"])
+        self.assertIn("flesch_kincaid_grade", response.json["readability"]["simplified"])
+        self.assertEqual(response.json["lab_extraction"]["sample_count"], 4)
+        self.assertEqual(response.json["lab_extraction"]["exact_match_accuracy"], 1.0)
+
+    def test_account_deletion_removes_reports_patients_audit_logs_and_files(self):
+        user = User.query.filter_by(email="test@example.com").one()
+        patient = Patient(owner_id=user.id, full_name="Private Patient")
+        db.session.add(patient)
+        db.session.flush()
+        os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+        filename = f"account-delete-{user.id}.txt"
+        file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        with open(file_path, "w", encoding="utf-8") as report_file:
+            report_file.write("Private report contents")
+        report = MedicalReport(
+            owner_id=user.id,
+            patient_id=patient.id,
+            file_path=file_path,
+            extracted_text="Private report contents",
+        )
+        db.session.add(report)
+        db.session.flush()
+        db.session.add(MedicalEntity(
+            report_id=report.id,
+            entity_text="Private term",
+            entity_label="LAB_TERM",
+        ))
+        db.session.add(AuditLog(user_id=user.id, action="test_account_delete"))
+        db.session.commit()
+        user_id = user.id
+        report_id = report.id
+
+        response = self.client.delete("/api/account")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json, {"deleted": True})
+        self.assertFalse(os.path.exists(file_path))
+        self.assertIsNone(db.session.get(User, user_id))
+        self.assertIsNone(db.session.get(MedicalReport, report_id))
+        self.assertEqual(Patient.query.filter_by(owner_id=user_id).count(), 0)
+        self.assertEqual(AuditLog.query.filter_by(user_id=user_id).count(), 0)
+        self.assertEqual(self.client.get("/api/auth/session").status_code, 401)
+
+    def test_report_deletion_removes_file_and_cascaded_records(self):
+        user = User.query.filter_by(email="test@example.com").one()
+        os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+        file_path = os.path.join(app.config["UPLOAD_FOLDER"], f"report-delete-{user.id}.txt")
+        with open(file_path, "w", encoding="utf-8") as report_file:
+            report_file.write("Private report contents")
+        report = MedicalReport(owner_id=user.id, file_path=file_path)
+        db.session.add(report)
+        db.session.flush()
+        db.session.add(MedicalEntity(
+            report_id=report.id,
+            entity_text="Hemoglobin",
+            entity_label="LAB_TERM",
+        ))
+        db.session.add(Recommendation(report_id=report.id, condition_name="General"))
+        db.session.commit()
+        report_id = report.id
+
+        response = self.client.delete(f"/api/reports/{report_id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(os.path.exists(file_path))
+        self.assertEqual(MedicalEntity.query.filter_by(report_id=report_id).count(), 0)
+        self.assertEqual(Recommendation.query.filter_by(report_id=report_id).count(), 0)
 
     def test_audit_logs_and_admin_protection(self):
         self.assertGreaterEqual(AuditLog.query.filter_by(action="login").count(), 1)
@@ -272,6 +466,10 @@ class TestDatabaseModels(unittest.TestCase):
         exported_text = self.client.get(f"/api/reports/{report.id}/export/txt")
         self.assertEqual(exported_text.status_code, 200)
         self.assertIn(b"Annual health review", exported_text.data)
+        exported_pdf = self.client.get(f"/api/reports/{report.id}/export/pdf")
+        self.assertEqual(exported_pdf.status_code, 200)
+        self.assertEqual(exported_pdf.mimetype, "application/pdf")
+        self.assertTrue(exported_pdf.data.startswith(b"%PDF-"))
 
         self.client.get("/logout")
         self.client.post(

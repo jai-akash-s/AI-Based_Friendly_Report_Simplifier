@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Analysis Results{% endblock %}
+{% block content %}
+  <nav>
+    <strong>AI Report Simplifier</strong>
+    <div class="actions">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/patients/">Patients</a>
+      <a href="/reports">Reports</a>
+    </div>
+  </nav>
+
+  <div class="card" style="margin-top: 24px;">
+    {% if patient %}
+      <h2>{{ patient.full_name }}</h2>
+    {% else %}
+      <h2>Report analysis</h2>
+    {% endif %}
+
+    {% if result and result.simplified_summary %}
+      <h3>Summary</h3>
+      <p>{{ result.simplified_summary }}</p>
+    {% else %}
+      <p class="muted">No summary generated.</p>
+    {% endif %}
+
+    {% if result and result.lab_results %}
+      <h3>Laboratory results</h3>
+      <ul>
+        {% for lab in result.lab_results %}
+          <li>{{ lab.test_name }}: {{ lab.value }} {{ lab.unit }} — {{ lab.status }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <aside class="alert warning" role="note">
+      {{ disclaimer }}
+    </aside>
+
+    {% if result and result.entities %}
+      <h3>Key findings</h3>
+      <ul>
+        {% for entity in result.entities %}
+          <li>
+            <strong>{{ entity.cleaned_name or entity.text }}</strong> — {{ entity.label }}
+            {% if entity.label in ["MEDICINE", "MEDICATION"] %}
+              {% if entity.status == "verified" %}
+                <span>{{ entity.generic_name }} ({{ entity.drug_class }}): {{ entity.use }}</span>
+              {% elif entity.status == "possible_match" %}
+                <span>Possible match: {{ entity.matched_name }}. Confirm the name before relying on this information.</span>
+              {% else %}
+                <span>Could not be identified. Please ask your pharmacist or doctor what this is used for.</span>
+              {% endif %}
+              <small>Brand names can vary. Confirm the exact medicine and dose with your doctor or pharmacist.</small>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endblock %}

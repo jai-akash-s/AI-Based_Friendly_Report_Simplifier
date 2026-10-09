@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+  <nav>
+    <strong>AI Report Simplifier</strong>
+    <div class="actions">
+      <a href="/patients/">Patients</a>
+      <a href="/reports">Reports</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="card" style="margin-top: 24px;">
+    <h2>Medical report workspace</h2>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="post" action="/upload" enctype="multipart/form-data">
+      <label>Upload report
+        <input type="file" name="report">
+      </label>
+      <label>Or paste report text
+        <textarea name="report_text" rows="8" style="width:100%; border-radius:8px; border:1px solid #cbd5e1; padding:12px;"></textarea>
+      </label>
+      <button type="submit">Analyze report</button>
+    </form>
+  </div>
+
+  {% if patients %}
+    <div class="card" style="margin-top: 20px;">
+      <h3>Patients</h3>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Age</th><th>Gender</th></tr>
+        </thead>
+        <tbody>
+          {% for patient in patients %}
+            <tr>
+              <td>{{ patient.full_name }}</td>
+              <td>{{ patient.age or 'N/A' }}</td>
+              <td>{{ patient.gender or 'N/A' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endblock %}

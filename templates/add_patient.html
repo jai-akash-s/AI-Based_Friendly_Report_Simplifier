@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Add patient{% endblock %}
+{% block content %}
+  <div class="card" style="max-width: 560px; margin: 40px auto;">
+    <h2>Add patient</h2>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="post" action="/patients/add">
+      <label>Full name
+        <input type="text" name="full_name" required>
+      </label>
+      <div class="grid" style="grid-template-columns: repeat(2, minmax(180px, 1fr));">
+        <label>Age
+          <input type="number" name="age">
+        </label>
+        <label>Gender
+          <input type="text" name="gender">
+        </label>
+      </div>
+      <div class="grid" style="grid-template-columns: repeat(2, minmax(180px, 1fr));">
+        <label>Blood group
+          <input type="text" name="blood_group">
+        </label>
+        <label>Phone
+          <input type="text" name="contact_phone">
+        </label>
+      </div>
+      <label>Email
+        <input type="email" name="contact_email">
+      </label>
+      <button type="submit">Save patient</button>
+    </form>
+  </div>
+{% endblock %}

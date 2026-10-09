@@ -21,6 +21,9 @@ class TestSimplifier(unittest.TestCase):
         self.assertIn("diabetes mellitus", entity_names)
 
         self.assertIn("recommendations", result)
+        self.assertIn("report mentions", result["simplified_summary"])
+        self.assertIn("may need interpretation", result["simplified_summary"])
+        self.assertIn("Please consult your doctor", result["simplified_summary"])
 
     def test_handwritten_prescription_report(self):
         sample = (

@@ -4,8 +4,20 @@ import json
 
 from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, send_file, url_for
 
-from database.models import MedicalReport, Patient, db
+from database.models import MedicalEntity, MedicalReport, Patient, db, safe_json_list
 from routes.auth_routes import get_current_user, log_audit, login_required, require_role
+from services.doctor_questions import generate_doctor_questions
+from services.lab_trends import build_lab_trend
+from services.medical_safety import DISCLAIMER
+from services.evaluation import evaluate_lab_extraction, evaluate_readability, load_labeled_samples
+from services.privacy import delete_report_file
+from services.pdf_export import build_simplified_report_pdf
+from services.medicine_lookup import lookup_medicine
+from services.translation import (
+	TranslationNotConfiguredError,
+	TranslationProviderError,
+	translate_report_output,
+)
 
 report_bp = Blueprint("report", __name__)
 
@@ -87,10 +99,91 @@ def patient_timeline(patient_id):
 			"title": report.title or report.filename or "Medical report",
 			"created_at": report.created_at.isoformat() if report.created_at else None,
 			"entities": [entity.to_dict() for entity in report.entities],
-			"lab_results": json.loads(report.lab_results) if report.lab_results else [],
+			"lab_results": report.to_dict()["lab_results"],
+			"questions_to_ask_doctor": generate_doctor_questions(report.to_dict()["lab_results"]),
 		}
 		for report in sorted(patient.reports, key=lambda item: item.created_at or 0, reverse=True)
 	])
+
+
+@report_bp.route("/api/patients/<int:patient_id>/lab-trends", methods=["GET"])
+@login_required
+def patient_lab_trend(patient_id):
+	patient = Patient.query.filter_by(id=patient_id, owner_id=get_current_user().id).first_or_404()
+	test_name = request.args.get("test", "").strip()
+	if not test_name:
+		return jsonify({"error": "A laboratory test name is required."}), 400
+
+	reports = MedicalReport.query.filter_by(
+		owner_id=get_current_user().id,
+		patient_id=patient.id,
+	).order_by(MedicalReport.created_at.asc()).all()
+	return jsonify(build_lab_trend([report.to_dict() for report in reports], test_name))
+
+
+@report_bp.route("/api/reports/<int:report_id>/evaluation", methods=["GET"])
+@login_required
+def evaluate_report(report_id):
+	report = MedicalReport.query.filter_by(id=report_id, owner_id=get_current_user().id).first_or_404()
+	return jsonify({
+		"readability": {
+			"original": evaluate_readability(report.extracted_text or ""),
+			"simplified": evaluate_readability(report.simplified_text or ""),
+		},
+		"lab_extraction": evaluate_lab_extraction(load_labeled_samples()),
+	})
+
+
+@report_bp.route("/api/reports/<int:report_id>/medicine-lookup", methods=["POST"])
+@login_required
+def lookup_report_medicine(report_id):
+	report = MedicalReport.query.filter_by(
+		id=report_id,
+		owner_id=get_current_user().id,
+	).first_or_404()
+	payload = request.get_json(silent=True) or {}
+	entity_id = payload.get("entity_id")
+	name = str(payload.get("name", "")).strip()
+	if not isinstance(entity_id, int) or not name or len(name) > 255:
+		return jsonify({"error": "A medicine entity and a name of 1 to 255 characters are required."}), 400
+
+	entity = MedicalEntity.query.filter_by(
+		id=entity_id,
+		report_id=report.id,
+	).first_or_404()
+	if str(entity.entity_label or "").upper() not in {"MEDICINE", "MEDICATION"}:
+		return jsonify({"error": "The selected report entity is not a medicine."}), 400
+
+	other_medicines = [
+		item.entity_text
+		for item in report.entities
+		if item.id != entity.id
+		and str(item.entity_label or "").upper() in {"MEDICINE", "MEDICATION"}
+	]
+	conditions = [
+		item.entity_text
+		for item in report.entities
+		if str(item.entity_label or "").upper() in {"DISEASE", "SYMPTOM"}
+	]
+	result = lookup_medicine(
+		name,
+		other_medicines=other_medicines,
+		conditions=conditions,
+	)
+	entity.entity_text = name
+	entity.explanation = ""
+	medicine_results = safe_json_list(report.medicine_results)
+	result["entity_id"] = entity.id
+	for index, saved_result in enumerate(medicine_results):
+		if saved_result.get("entity_id") == entity.id:
+			medicine_results[index] = result
+			break
+	else:
+		medicine_results.append(result)
+	report.medicine_results = json.dumps(medicine_results, ensure_ascii=False)
+	db.session.commit()
+	log_audit("medicine_lookup", "medical_report", report.id)
+	return jsonify(result)
 
 
 @report_bp.route("/api/reports/<int:report_id>", methods=["PATCH", "DELETE"])
@@ -98,8 +191,11 @@ def patient_timeline(patient_id):
 def manage_report(report_id):
 	report = MedicalReport.query.filter_by(id=report_id, owner_id=get_current_user().id).first_or_404()
 	if request.method == "DELETE":
-		if report.file_path and os.path.exists(report.file_path):
-			os.remove(report.file_path)
+		try:
+			delete_report_file(report.file_path, current_app.config["UPLOAD_FOLDER"])
+		except OSError as error:
+			current_app.logger.error("Report deletion could not remove its file: %s", error)
+			return jsonify({"error": "Unable to securely delete the report file."}), 500
 		db.session.delete(report)
 		db.session.commit()
 		log_audit("report_delete", "medical_report", report_id)
@@ -120,6 +216,7 @@ def manage_report(report_id):
 def export_report(report_id, file_format):
 	report = MedicalReport.query.filter_by(id=report_id, owner_id=get_current_user().id).first_or_404()
 	patient = report.patient
+	report_data = report.to_dict()
 	data = {
 		"patient": {
 			"name": patient.full_name if patient else None,
@@ -130,18 +227,19 @@ def export_report(report_id, file_format):
 		"title": report.title or report.filename or "Medical report",
 		"created_at": report.created_at.isoformat() if report.created_at else None,
 		"original_text": report.extracted_text,
-		"simplified_summary": report.simplified_text,
+		"simplified_summary": report_data["simplified_text"],
 		"entities": [
-			{"text": entity.entity_text, "label": entity.entity_label, "explanation": entity.explanation}
-			for entity in report.entities
+			{
+				"text": entity.get("entity_text", ""),
+				"label": entity.get("entity_label", ""),
+				"explanation": entity.get("explanation", ""),
+			}
+			for entity in report_data["entities"]
 		],
 		"recommendations": [recommendation.to_dict() for recommendation in report.recommendations],
-		"questions_to_ask_doctor": [
-			"What does this result mean for me?",
-			"Should this test be repeated or followed up?",
-			"Are there lifestyle changes I should discuss with you?",
-		],
-		"disclaimer": "This information is for educational purposes only and does not replace professional medical advice.",
+		"lab_results": report_data["lab_results"],
+		"questions_to_ask_doctor": report_data["questions_to_ask_doctor"],
+		"disclaimer": DISCLAIMER,
 	}
 	if file_format == "json":
 		return jsonify(data)
@@ -161,6 +259,14 @@ def export_report(report_id, file_format):
 		])
 		return send_file(io.BytesIO(content.encode("utf-8")), as_attachment=True, download_name="medical-report.txt", mimetype="text/plain")
 	if file_format in {"pdf", "docx"}:
+		if file_format == "pdf":
+			output = build_simplified_report_pdf(data)
+			return send_file(
+				output,
+				as_attachment=True,
+				download_name="medical-report.pdf",
+				mimetype="application/pdf",
+			)
 		content_lines = [
 			data["title"],
 			f"Patient: {data['patient']['name'] or 'Unassigned'}",
@@ -171,18 +277,6 @@ def export_report(report_id, file_format):
 			"",
 			data["disclaimer"],
 		]
-		if file_format == "pdf":
-			from reportlab.lib.pagesizes import letter
-			from reportlab.pdfgen import canvas
-			output = io.BytesIO()
-			pdf = canvas.Canvas(output, pagesize=letter)
-			text = pdf.beginText(48, 750)
-			for line in "\n".join(content_lines).splitlines():
-				text.textLine(line[:110])
-			pdf.drawText(text)
-			pdf.save()
-			output.seek(0)
-			return send_file(output, as_attachment=True, download_name="medical-report.pdf", mimetype="application/pdf")
 		from docx import Document
 		document = Document()
 		for line in content_lines:
@@ -192,6 +286,32 @@ def export_report(report_id, file_format):
 		output.seek(0)
 		return send_file(output, as_attachment=True, download_name="medical-report.docx", mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 	return jsonify({"error": "Supported export formats are pdf, docx, json, and txt."}), 400
+
+
+@report_bp.route("/api/reports/<int:report_id>/translate", methods=["POST"])
+@login_required
+def translate_report(report_id):
+	report = MedicalReport.query.filter_by(id=report_id, owner_id=get_current_user().id).first_or_404()
+	payload = request.get_json(silent=True) or {}
+	language = str(payload.get("language", "")).strip()
+	if language not in {"en", "ta", "hi"}:
+		return jsonify({"error": "Supported languages are en, ta, and hi."}), 400
+
+	report_data = report.to_dict()
+	output = {
+		"summary": report_data["simplified_text"] or "",
+		"entities": [entity.get("explanation") or "" for entity in report_data["entities"]],
+		"lab_meanings": [result.get("meaning") or "" for result in report_data["lab_results"]],
+		"questions": report_data["questions_to_ask_doctor"],
+		"disclaimer": DISCLAIMER,
+	}
+	try:
+		return jsonify({"language": language, "output": translate_report_output(output, language)})
+	except TranslationNotConfiguredError as error:
+		return jsonify({"error": str(error)}), 503
+	except TranslationProviderError as error:
+		current_app.logger.warning("Report translation failed: %s", error)
+		return jsonify({"error": str(error)}), 502
 
 
 @report_bp.route("/reports/<int:report_id>/download", methods=["GET"])
@@ -207,6 +327,11 @@ def download_report(report_id):
 @login_required
 def delete_report(report_id):
 	report = MedicalReport.query.filter_by(id=report_id, owner_id=get_current_user().id).first_or_404()
+	try:
+		delete_report_file(report.file_path, current_app.config["UPLOAD_FOLDER"])
+	except OSError as error:
+		current_app.logger.error("Report deletion could not remove its file: %s", error)
+		return jsonify({"error": "Unable to securely delete the report file."}), 500
 	db.session.delete(report)
 	db.session.commit()
 	log_audit("report_delete", "medical_report", report_id)
