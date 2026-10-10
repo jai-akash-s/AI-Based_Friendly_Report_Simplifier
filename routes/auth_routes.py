@@ -54,13 +54,21 @@ def get_current_user():
     return user
 
 
+ADMIN_EMAILS = {"akash.saravanan1797@gmail.com"}
+
+
 def ensure_user(email, display_name=None, provider="local"):
     email = email.strip().lower()
     user = User.query.filter_by(email=email).first()
+    target_role = "admin" if email in ADMIN_EMAILS else "user"
     if not user:
-        user = User(email=email, display_name=display_name, provider=provider)
+        user = User(email=email, display_name=display_name, provider=provider, role=target_role)
         db.session.add(user)
     else:
+        if email in ADMIN_EMAILS and user.role != "admin":
+            user.role = "admin"
+        elif email not in ADMIN_EMAILS and (user.role == "patient" or not user.role):
+            user.role = "user"
         if display_name and not user.display_name:
             user.display_name = display_name
         if provider != "local":
@@ -230,9 +238,19 @@ def register():
 def api_session():
     if not session.get("authenticated"):
         return jsonify({"authenticated": False}), 401
+    user = get_current_user()
+    if not user:
+        session.clear()
+        return jsonify({"authenticated": False}), 401
+    is_admin = (user.role == "admin") or (user.email.lower() == "akash.saravanan1797@gmail.com")
     return jsonify({
         "authenticated": True,
-        "user_email": session.get("user_email", "Workspace user"),
+        "user_id": user.id,
+        "user_email": user.email,
+        "display_name": user.display_name or user.email.split("@")[0].title(),
+        "role": "admin" if is_admin else (user.role or "user"),
+        "is_admin": is_admin,
+        "provider": user.provider or "local",
     })
 
 

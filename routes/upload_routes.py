@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, render_template, request, current_app
 from werkzeug.utils import secure_filename
 import os
 import json
+import re
 from uuid import uuid4
 
 from core.extractor import OCRNotAvailableError, extract_text
@@ -12,7 +13,8 @@ from core.lab_extractor import extract_lab_results
 from services.doctor_questions import generate_doctor_questions
 from services.medical_safety import DISCLAIMER, enforce_safe_explanation, enforce_safe_summary
 from services.medicine_lookup import lookup_medicine
-from database.models import db, Patient, MedicalReport, MedicalEntity, Recommendation
+from services.drug_interactions import check_drug_interactions
+from database.models import db, Patient, MedicalReport, MedicalEntity, Recommendation, Reminder
 from routes.auth_routes import get_current_user, log_audit, login_required
 
 upload_bp = Blueprint("upload", __name__)
@@ -307,8 +309,9 @@ def upload():
             )
             medicine_results.append(medicine_result)
             entity.update(medicine_result)
-            entity["explanation"] = ""
+            entity["explanation"] = medicine_result.get("general_use") or medicine_result.get("use") or ""
         result["medicine_results"] = medicine_results
+        result["drug_interactions"] = check_drug_interactions(other_medicines)
 
         # Step 4: Save Medical Report record linked to target_patient
         report_record = MedicalReport(
@@ -362,8 +365,41 @@ def upload():
             )
             rec_obj.set_list_field("foods_to_eat", cond.get("foods_to_eat", []))
             rec_obj.set_list_field("foods_to_avoid", cond.get("foods_to_avoid", []))
-            rec_obj.set_list_field("recommended_exercise", cond.get("recommended_exercise", []))
             db.session.add(rec_obj)
+
+        # Auto-create patient follow-up reminders for abnormal findings or explicit checkups
+        abnormal_labs = [lab for lab in lab_results if lab.get("status") in {"Low", "High"}]
+        for lab in abnormal_labs[:2]:
+            reminder = Reminder(
+                owner_id=user.id,
+                patient_id=target_patient.id if target_patient else None,
+                report_id=report_record.id,
+                title=f"{lab.get('test_name', 'Lab')} review",
+                due_text="Follow up in 1–2 weeks",
+                tag="warning",
+                notes=f"Report flagged {lab.get('test_name')} at {lab.get('value')} {lab.get('unit', '')} ({lab.get('status')}).",
+                status="pending",
+            )
+            db.session.add(reminder)
+
+        followup_match = re.search(
+            r"follow[\s-]*up[^\n]{0,30}(?:(\d+)\s*(day|week|month)s?|soon|regularly)",
+            text,
+            re.IGNORECASE,
+        )
+        if followup_match and not abnormal_labs:
+            time_frame = f"In {followup_match.group(1)} {followup_match.group(2)}s" if followup_match.group(1) else "Soon"
+            reminder = Reminder(
+                owner_id=user.id,
+                patient_id=target_patient.id if target_patient else None,
+                report_id=report_record.id,
+                title="Clinical follow-up",
+                due_text=time_frame,
+                tag="info",
+                notes="Follow-up visit mentioned in report notes.",
+                status="pending",
+            )
+            db.session.add(reminder)
 
         db.session.commit()
         log_audit("report_upload", "medical_report", report_record.id, user)

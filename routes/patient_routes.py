@@ -1,11 +1,13 @@
-from flask import Blueprint, render_template, request, redirect, jsonify, flash, url_for
-from database.models import db, Patient, MedicalReport
+from flask import Blueprint, render_template, request, redirect, jsonify, flash, url_for, current_app
+from database.models import db, Patient, MedicalReport, Reminder
 from routes.auth_routes import get_current_user, log_audit, login_required
+from services.privacy import delete_report_file
 
-patient_bp = Blueprint("patient", __name__, url_prefix="/patients")
+patient_bp = Blueprint("patient", __name__)
 
 
-@patient_bp.route("/", methods=["GET"])
+@patient_bp.route("/patients", methods=["GET"])
+@patient_bp.route("/patients/", methods=["GET"])
 @login_required
 def list_patients():
     """Lists all registered patients in professional table format."""
@@ -14,7 +16,7 @@ def list_patients():
     return render_template("patients.html", patients=patients)
 
 
-@patient_bp.route("/add", methods=["GET", "POST"])
+@patient_bp.route("/patients/add", methods=["GET", "POST"])
 @login_required
 def add_patient():
     """Adds a new patient to the database."""
@@ -47,7 +49,7 @@ def add_patient():
     return render_template("add_patient.html")
 
 
-@patient_bp.route("/<int:patient_id>", methods=["GET"])
+@patient_bp.route("/patients/<int:patient_id>", methods=["GET"])
 @login_required
 def view_patient(patient_id):
     """Displays detailed patient record and history of medical reports."""
@@ -55,7 +57,33 @@ def view_patient(patient_id):
     return render_template("patient_detail.html", patient=patient)
 
 
-@patient_bp.route("/api/list", methods=["GET"])
+@patient_bp.route("/patients/<int:patient_id>/delete", methods=["POST"])
+@login_required
+def delete_patient_html(patient_id):
+    """HTML form endpoint to delete a patient record and its associated data."""
+    patient = Patient.query.filter_by(id=patient_id, owner_id=get_current_user().id).first_or_404()
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    for report in list(patient.reports):
+        if report.file_path and upload_folder:
+            try:
+                delete_report_file(report.file_path, upload_folder)
+            except OSError as err:
+                current_app.logger.warning("Could not delete report file %s: %s", report.file_path, err)
+
+    report_ids = [r.id for r in patient.reports]
+    Reminder.query.filter_by(patient_id=patient.id).delete(synchronize_session=False)
+    if report_ids:
+        Reminder.query.filter(Reminder.report_id.in_(report_ids)).delete(synchronize_session=False)
+
+    db.session.delete(patient)
+    db.session.commit()
+    log_audit("patient_delete", "patient", patient_id)
+    return redirect(url_for("patient.list_patients"))
+
+
+@patient_bp.route("/patients/api/list", methods=["GET"])
+@patient_bp.route("/api/patients/list", methods=["GET"])
+@patient_bp.route("/api/patients", methods=["GET"])
 @login_required
 def api_list_patients():
     """Returns JSON list of patients for frontend select inputs."""
@@ -64,7 +92,8 @@ def api_list_patients():
     return jsonify([p.to_dict() for p in patients])
 
 
-@patient_bp.route("/api", methods=["POST"])
+@patient_bp.route("/patients/api", methods=["POST"])
+@patient_bp.route("/api/patients", methods=["POST"])
 @login_required
 def api_create_patient():
     user = get_current_user()
@@ -87,7 +116,8 @@ def api_create_patient():
     return jsonify(patient.to_dict()), 201
 
 
-@patient_bp.route("/api/<int:patient_id>", methods=["GET"])
+@patient_bp.route("/patients/api/<int:patient_id>", methods=["GET"])
+@patient_bp.route("/api/patients/<int:patient_id>", methods=["GET"])
 @login_required
 def api_patient_detail(patient_id):
     patient = Patient.query.filter_by(id=patient_id, owner_id=get_current_user().id).first_or_404()
@@ -97,11 +127,28 @@ def api_patient_detail(patient_id):
     })
 
 
-@patient_bp.route("/api/<int:patient_id>", methods=["PATCH", "DELETE"])
+@patient_bp.route("/patients/api/<int:patient_id>", methods=["PATCH", "DELETE"])
+@patient_bp.route("/api/patients/<int:patient_id>", methods=["PATCH", "DELETE"])
 @login_required
 def manage_patient(patient_id):
     patient = Patient.query.filter_by(id=patient_id, owner_id=get_current_user().id).first_or_404()
     if request.method == "DELETE":
+        # 1. Clean up physical report files from storage
+        upload_folder = current_app.config.get("UPLOAD_FOLDER")
+        for report in list(patient.reports):
+            if report.file_path and upload_folder:
+                try:
+                    delete_report_file(report.file_path, upload_folder)
+                except OSError as err:
+                    current_app.logger.warning("Could not delete report file %s: %s", report.file_path, err)
+
+        # 2. Delete reminders associated with the patient or patient's reports
+        report_ids = [r.id for r in patient.reports]
+        Reminder.query.filter_by(patient_id=patient.id).delete(synchronize_session=False)
+        if report_ids:
+            Reminder.query.filter(Reminder.report_id.in_(report_ids)).delete(synchronize_session=False)
+
+        # 3. Delete patient (cascading reports, entities, recommendations)
         db.session.delete(patient)
         db.session.commit()
         log_audit("patient_delete", "patient", patient_id)

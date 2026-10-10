@@ -1,5 +1,6 @@
 """Create downloadable PDF summaries from structured report output."""
 
+import os
 from html import escape
 from io import BytesIO
 
@@ -9,6 +10,25 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+DEFAULT_FONT = "Helvetica"
+DEFAULT_BOLD = "Helvetica-Bold"
+
+# Check for Windows Indic TrueType font to support Tamil and Hindi exports
+for font_candidate in ["C:/Windows/Fonts/Nirmala.ttc", "C:/Windows/Fonts/arial.ttf"]:
+    if os.path.exists(font_candidate):
+        try:
+            if font_candidate.endswith(".ttc"):
+                pdfmetrics.registerFont(TTFont("IndicFont", font_candidate, subfontIndex=0))
+            else:
+                pdfmetrics.registerFont(TTFont("IndicFont", font_candidate))
+            DEFAULT_FONT = "IndicFont"
+            DEFAULT_BOLD = "IndicFont"
+            break
+        except Exception:
+            continue
 
 
 def build_simplified_report_pdf(data):
@@ -27,6 +47,7 @@ def build_simplified_report_pdf(data):
     title_style = ParagraphStyle(
         "ReportTitle",
         parent=styles["Title"],
+        fontName=DEFAULT_BOLD,
         alignment=TA_CENTER,
         textColor=colors.HexColor("#123b56"),
         spaceAfter=14,
@@ -34,13 +55,28 @@ def build_simplified_report_pdf(data):
     section_style = ParagraphStyle(
         "ReportSection",
         parent=styles["Heading2"],
+        fontName=DEFAULT_BOLD,
         textColor=colors.HexColor("#0f706a"),
         spaceBefore=12,
         spaceAfter=7,
     )
-    body_style = styles["BodyText"]
+    body_style = ParagraphStyle(
+        "ReportBody",
+        parent=styles["BodyText"],
+        fontName=DEFAULT_FONT,
+    )
+    italic_style = ParagraphStyle(
+        "ReportItalic",
+        parent=styles["Italic"],
+        fontName=DEFAULT_FONT,
+    )
+    heading3_style = ParagraphStyle(
+        "ReportHeading3",
+        parent=styles["Heading3"],
+        fontName=DEFAULT_BOLD,
+    )
     story = [
-        Paragraph("AI-Based Friendly Report Simplifier", styles["Heading3"]),
+        Paragraph("AI-Based Friendly Report Simplifier", heading3_style),
         Paragraph(escape(data.get("title") or "Simplified medical report"), title_style),
     ]
 
@@ -101,8 +137,10 @@ def build_simplified_report_pdf(data):
     if entities:
         story.append(Paragraph("Medical terms", section_style))
         for entity in entities:
-            term = escape(str(entity.get("text") or ""))
-            explanation = escape(str(entity.get("explanation") or ""))
+            term = escape(str(entity.get("text") or entity.get("name") or entity.get("entity_text") or ""))
+            explanation = escape(str(entity.get("explanation") or entity.get("general_use") or entity.get("use") or ""))
+            if not explanation and str(entity.get("label") or "").upper() in {"MEDICINE", "MEDICATION"}:
+                explanation = "Prescription medication noted in report."
             story.append(Paragraph(f"<b>{term}</b>: {explanation}", body_style))
             story.append(Spacer(1, 4))
 
@@ -115,7 +153,7 @@ def build_simplified_report_pdf(data):
 
     story.extend([
         Spacer(1, 12),
-        Paragraph(escape(data.get("disclaimer") or ""), styles["Italic"]),
+        Paragraph(escape(data.get("disclaimer") or ""), italic_style),
     ])
     document.build(story)
     output.seek(0)

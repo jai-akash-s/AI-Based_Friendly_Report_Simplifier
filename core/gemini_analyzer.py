@@ -29,8 +29,15 @@ def generate_gemini_json(
     if not api_key:
         raise GeminiAnalysisError("GEMINI_API_KEY is required for this request.")
 
-    configured_model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip() or "gemini-3.8-flash"
-    models = list(dict.fromkeys((configured_model, "gemini-3.6-flash", "gemini-3.1-flash-lite")))
+    configured_model = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash").strip() or "gemini-3.5-flash"
+    models = list(dict.fromkeys((
+        configured_model,
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.6-flash",
+        "gemini-3.8-flash",
+        "gemini-2.5-flash",
+    )))
     generation_config = {"responseMimeType": "application/json"}
     if temperature is not None:
         generation_config["temperature"] = temperature

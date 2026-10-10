@@ -5,6 +5,7 @@ import string
 from flask_sqlalchemy import SQLAlchemy
 from services.doctor_questions import generate_doctor_questions
 from services.medical_safety import enforce_safe_explanation, enforce_safe_summary
+from services.drug_interactions import check_drug_interactions
 
 db = SQLAlchemy()
 
@@ -49,6 +50,22 @@ class User(db.Model):
     patients = db.relationship("Patient", backref="owner", lazy=True)
     reports = db.relationship("MedicalReport", backref="owner", lazy=True)
     audit_events = db.relationship("AuditLog", backref="user", lazy=True)
+    user_reminders = db.relationship("Reminder", backref="owner", lazy=True, cascade="all, delete-orphan")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "display_name": self.display_name or self.email.split("@")[0].title(),
+            "provider": self.provider,
+            "role": self.role or "user",
+            "report_count": len(self.reports) if self.reports else 0,
+            "patient_count": len(self.patients) if self.patients else 0,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
 
 
 class AuditLog(db.Model):
@@ -60,6 +77,9 @@ class AuditLog(db.Model):
     resource_type = db.Column(db.String(50), nullable=True)
     resource_id = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=utc_now, index=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class Patient(db.Model):
@@ -83,6 +103,9 @@ class Patient(db.Model):
     reports = db.relationship(
         "MedicalReport", backref="patient", lazy=True, cascade="all, delete-orphan"
     )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def to_dict(self):
         return {
@@ -123,6 +146,9 @@ class MedicalReport(db.Model):
         "Recommendation", backref="report", lazy=True, cascade="all, delete-orphan"
     )
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def to_dict(self):
         lab_results = safe_json_list(self.lab_results)
         medicine_results = safe_json_list(self.medicine_results)
@@ -138,6 +164,12 @@ class MedicalReport(db.Model):
             medicine_result = medicine_results_by_id.get(entity["id"])
             if medicine_result:
                 entity.update(medicine_result)
+                if not entity.get("explanation"):
+                    entity["explanation"] = (
+                        medicine_result.get("general_use")
+                        or medicine_result.get("use")
+                        or ""
+                    )
             else:
                 entity.update({
                     "name": entity["entity_text"],
@@ -152,12 +184,17 @@ class MedicalReport(db.Model):
                     "matched_name": None,
                     "needs_confirmation": True,
                 })
+        medicine_names = [
+            entity["entity_text"] for entity in entities
+            if str(entity.get("entity_label") or "").upper() in {"MEDICINE", "MEDICATION"}
+        ]
         return {
             "id": self.id,
             "patient_id": self.patient_id,
             "title": self.title,
             "lab_results": lab_results,
             "medicine_results": medicine_results,
+            "drug_interactions": check_drug_interactions(medicine_names),
             "questions_to_ask_doctor": generate_doctor_questions(lab_results),
             "filename": self.filename,
             "file_path": self.file_path,
@@ -195,6 +232,9 @@ class MedicalEntity(db.Model):
     entity_label = db.Column(db.String(100), nullable=True)
     explanation = db.Column(db.Text, nullable=True)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def to_dict(self):
         is_medicine = str(self.entity_label or "").upper() in {"MEDICINE", "MEDICATION"}
         return {
@@ -221,6 +261,9 @@ class Recommendation(db.Model):
     recommended_exercise = db.Column(db.Text, nullable=True)  # JSON-encoded string
     exercise_precautions = db.Column(db.Text, nullable=True)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def set_list_field(self, field_name, list_data):
         if isinstance(list_data, list):
             setattr(self, field_name, json.dumps(list_data))
@@ -246,3 +289,39 @@ class Recommendation(db.Model):
             "recommended_exercise": self.get_list_field("recommended_exercise"),
             "exercise_precautions": self.exercise_precautions,
         }
+
+
+class Reminder(db.Model):
+    __tablename__ = "reminders"
+
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey("patients.id"), nullable=True, index=True)
+    report_id = db.Column(db.Integer, db.ForeignKey("medical_reports.id"), nullable=True, index=True)
+    title = db.Column(db.String(200), nullable=False)
+    due_text = db.Column(db.String(100), nullable=True)
+    tag = db.Column(db.String(30), default="info")        # "warning", "info", "success"
+    notes = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default="pending")  # "pending", "completed"
+    created_at = db.Column(db.DateTime, default=utc_now)
+
+    patient = db.relationship("Patient", backref="reminders", lazy=True)
+    report = db.relationship("MedicalReport", backref="reminders", lazy=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "patient_id": self.patient_id,
+            "patient_name": self.patient.full_name if self.patient else None,
+            "report_id": self.report_id,
+            "title": self.title,
+            "due_text": self.due_text,
+            "tag": self.tag,
+            "notes": self.notes,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+

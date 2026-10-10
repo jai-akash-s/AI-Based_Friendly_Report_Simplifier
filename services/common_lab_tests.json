@@ -98,6 +98,240 @@
       "high": 5.6,
       "low_meaning": "A lower HbA1c result should be interpreted in context; please consult your doctor.",
       "high_meaning": "A higher HbA1c result may reflect higher average blood sugar; please consult your doctor."
+    },
+    {
+      "name": "Bilirubin",
+      "aliases": ["Total Bilirubin", "Bilirubin Total", "Bilirubin", "T. Bilirubin"],
+      "unit": "mg/dL",
+      "low": 0.2,
+      "high": 1.2,
+      "low_meaning": "A lower total bilirubin result is typically not clinically significant; please consult your doctor.",
+      "high_meaning": "A higher bilirubin result may relate to liver function or red blood cell breakdown; please consult your doctor."
+    },
+    {
+      "name": "SGPT / ALT",
+      "aliases": ["SGPT", "ALT", "Alanine Aminotransferase"],
+      "unit": "U/L",
+      "low": 7.0,
+      "high": 56.0,
+      "low_meaning": "A lower ALT result is generally normal; please consult your doctor.",
+      "high_meaning": "A higher ALT/SGPT result can indicate liver stress or inflammation; please consult your doctor."
+    },
+    {
+      "name": "SGOT / AST",
+      "aliases": ["SGOT", "AST", "Aspartate Aminotransferase"],
+      "unit": "U/L",
+      "low": 10.0,
+      "high": 40.0,
+      "low_meaning": "A lower AST result is generally normal; please consult your doctor.",
+      "high_meaning": "A higher AST/SGOT result can indicate liver, heart, or muscle stress; please consult your doctor."
+    },
+    {
+      "name": "Urea",
+      "aliases": ["Blood Urea", "BUN", "Blood Urea Nitrogen", "Urea"],
+      "unit": "mg/dL",
+      "low": 7.0,
+      "high": 20.0,
+      "low_meaning": "A lower blood urea result can relate to diet or hydration; please consult your doctor.",
+      "high_meaning": "A higher blood urea result may be related to kidney function or dehydration; please consult your doctor."
+    },
+    {
+      "name": "Uric Acid",
+      "aliases": ["Serum Uric Acid", "Uric Acid"],
+      "unit": "mg/dL",
+      "low": 3.5,
+      "high": 7.2,
+      "low_meaning": "A lower uric acid result is usually harmless; please consult your doctor.",
+      "high_meaning": "A higher uric acid result may relate to gout, kidney clearance, or joint inflammation; please consult your doctor."
+    },
+    {
+      "name": "Triglycerides",
+      "aliases": ["Serum Triglycerides", "Triglycerides", "TRIG"],
+      "unit": "mg/dL",
+      "low": 0.0,
+      "high": 150.0,
+      "low_meaning": "A lower triglyceride result is generally favorable; discuss with your doctor.",
+      "high_meaning": "Higher triglycerides may relate to metabolic or cardiovascular health; please consult your doctor."
+    },
+    {
+      "name": "VLDL",
+      "aliases": ["VLDL Cholesterol", "VLDL", "Very Low Density Lipoprotein"],
+      "unit": "mg/dL",
+      "low": 2.0,
+      "high": 30.0,
+      "low_meaning": "A lower VLDL result is generally favorable; discuss with your doctor.",
+      "high_meaning": "Higher VLDL may affect cardiovascular health; please consult your doctor."
+    },
+    {
+      "name": "Alkaline Phosphatase",
+      "aliases": ["Alkaline Phosphatase", "ALP", "Alk Phos"],
+      "unit": "U/L",
+      "low": 44.0,
+      "high": 147.0,
+      "low_meaning": "A lower alkaline phosphatase result is uncommon; please consult your doctor.",
+      "high_meaning": "Higher alkaline phosphatase may relate to liver, gallbladder, or bone metabolism; please consult your doctor."
+    },
+    {
+      "name": "Direct Bilirubin",
+      "aliases": ["Direct Bilirubin", "Conjugated Bilirubin"],
+      "unit": "mg/dL",
+      "low": 0.0,
+      "high": 0.3,
+      "low_meaning": "A low direct bilirubin level is generally normal; please consult your doctor.",
+      "high_meaning": "Higher direct bilirubin may be associated with liver clearance or bile flow; please consult your doctor."
+    },
+    {
+      "name": "Total Protein",
+      "aliases": ["Total Protein", "Serum Protein"],
+      "unit": "g/dL",
+      "low": 6.0,
+      "high": 8.3,
+      "low_meaning": "Lower total protein can relate to nutritional balance, liver, or kidney function; please consult your doctor.",
+      "high_meaning": "Higher total protein can have several causes, including dehydration or inflammation; please consult your doctor."
+    },
+    {
+      "name": "Albumin",
+      "aliases": ["Serum Albumin", "Albumin"],
+      "unit": "g/dL",
+      "low": 3.5,
+      "high": 5.5,
+      "low_meaning": "Lower albumin can reflect nutritional status, kidney filtration, or liver function; please consult your doctor.",
+      "high_meaning": "Higher albumin is typically associated with fluid loss or dehydration; please consult your doctor."
+    },
+    {
+      "name": "eGFR",
+      "aliases": ["Estimated Glomerular Filtration Rate", "eGFR", "GFR"],
+      "unit": "mL/min",
+      "low": 60.0,
+      "high": 120.0,
+      "low_meaning": "A lower eGFR can suggest reduced kidney filtration efficiency; please consult your doctor.",
+      "high_meaning": "A normal or elevated eGFR indicates expected kidney filtration."
+    },
+    {
+      "name": "Sodium",
+      "aliases": ["Serum Sodium", "Sodium", "Na+"],
+      "unit": "mmol/L",
+      "low": 135.0,
+      "high": 145.0,
+      "low_meaning": "Lower sodium (hyponatremia) affects body fluid and electrolyte balance; please consult your doctor.",
+      "high_meaning": "Higher sodium (hypernatremia) is commonly associated with fluid loss or dehydration; please consult your doctor."
+    },
+    {
+      "name": "Potassium",
+      "aliases": ["Serum Potassium", "Potassium", "K+"],
+      "unit": "mmol/L",
+      "low": 3.5,
+      "high": 5.2,
+      "low_meaning": "Lower potassium (hypokalemia) may affect muscle activity and heart rhythm; please consult your doctor.",
+      "high_meaning": "Higher potassium (hyperkalemia) can impact heart rhythm and kidney clearance; please consult your doctor promptly."
+    },
+    {
+      "name": "Chloride",
+      "aliases": ["Serum Chloride", "Chloride", "Cl-"],
+      "unit": "mmol/L",
+      "low": 96.0,
+      "high": 106.0,
+      "low_meaning": "Lower chloride can reflect electrolyte changes or fluid balance; please consult your doctor.",
+      "high_meaning": "Higher chloride can be related to dehydration or kidney regulation; please consult your doctor."
+    },
+    {
+      "name": "Calcium",
+      "aliases": ["Serum Calcium", "Calcium", "Total Calcium"],
+      "unit": "mg/dL",
+      "low": 8.5,
+      "high": 10.5,
+      "low_meaning": "Lower calcium may affect bone, nerve, or parathyroid balance; please consult your doctor.",
+      "high_meaning": "Higher calcium can relate to bone metabolism, parathyroid function, or hydration; please consult your doctor."
+    },
+    {
+      "name": "ESR",
+      "aliases": ["Erythrocyte Sedimentation Rate", "ESR", "Sed Rate"],
+      "unit": "mm/hr",
+      "low": 0.0,
+      "high": 20.0,
+      "low_meaning": "A low ESR reading is generally normal; please consult your doctor.",
+      "high_meaning": "An elevated ESR suggests possible inflammation or immune response; please consult your doctor."
+    },
+    {
+      "name": "Vitamin D",
+      "aliases": ["25-Hydroxy Vitamin D", "Vitamin D", "Vit D", "25-OH Vitamin D"],
+      "unit": "ng/mL",
+      "low": 30.0,
+      "high": 100.0,
+      "low_meaning": "Lower vitamin D can affect bone density, calcium absorption, and energy; please consult your doctor.",
+      "high_meaning": "An elevated vitamin D level should be reviewed with your doctor or pharmacist."
+    },
+    {
+      "name": "Vitamin B12",
+      "aliases": ["Vitamin B12", "Vit B12", "Cobalamin", "Serum B12"],
+      "unit": "pg/mL",
+      "low": 200.0,
+      "high": 900.0,
+      "low_meaning": "Lower vitamin B12 may affect nerve function and red blood cell production; please consult your doctor.",
+      "high_meaning": "Elevated vitamin B12 should be reviewed in the context of supplements or clinical health."
+    },
+    {
+      "name": "Free T4",
+      "aliases": ["Free T4", "Free Thyroxine", "FT4"],
+      "unit": "ng/dL",
+      "low": 0.8,
+      "high": 1.8,
+      "low_meaning": "Lower Free T4 may relate to reduced thyroid hormone production; please consult your doctor.",
+      "high_meaning": "Higher Free T4 may reflect elevated thyroid hormone activity; please consult your doctor."
+    },
+    {
+      "name": "Total T3",
+      "aliases": ["Total T3", "T3", "Triiodothyronine"],
+      "unit": "ng/dL",
+      "low": 80.0,
+      "high": 200.0,
+      "low_meaning": "Lower T3 can relate to thyroid hormone balance; please consult your doctor.",
+      "high_meaning": "Higher T3 can relate to thyroid hormone activity; please consult your doctor."
+    },
+    {
+      "name": "Total T4",
+      "aliases": ["Total T4", "T4", "Thyroxine"],
+      "unit": "ug/dL",
+      "low": 4.5,
+      "high": 12.0,
+      "low_meaning": "Lower T4 may be associated with underactive thyroid function; please consult your doctor.",
+      "high_meaning": "Higher T4 may be associated with overactive thyroid function; please consult your doctor."
+    },
+    {
+      "name": "Neutrophils",
+      "aliases": ["Neutrophils", "Neutrophil Count", "Polymorphs"],
+      "unit": "%",
+      "low": 40.0,
+      "high": 75.0,
+      "low_meaning": "Lower neutrophils (neutropenia) can affect the body's immune defense; please consult your doctor.",
+      "high_meaning": "Higher neutrophils may indicate an immune response or infection; please consult your doctor."
+    },
+    {
+      "name": "Lymphocytes",
+      "aliases": ["Lymphocytes", "Lymphocyte Count"],
+      "unit": "%",
+      "low": 20.0,
+      "high": 45.0,
+      "low_meaning": "Lower lymphocytes may reflect temporary immune strain; please consult your doctor.",
+      "high_meaning": "Higher lymphocytes often reflect an immune response to viral or other challenges; please consult your doctor."
+    },
+    {
+      "name": "Eosinophils",
+      "aliases": ["Eosinophils", "Eosinophil Count"],
+      "unit": "%",
+      "low": 1.0,
+      "high": 6.0,
+      "low_meaning": "A low eosinophil percentage is generally normal; please consult your doctor.",
+      "high_meaning": "Higher eosinophils can relate to allergic reactions or immune activity; please consult your doctor."
+    },
+    {
+      "name": "Hematocrit",
+      "aliases": ["Hematocrit", "Packed Cell Volume", "PCV", "Hct"],
+      "unit": "%",
+      "low": 36.0,
+      "high": 50.0,
+      "low_meaning": "Lower hematocrit may correspond to fewer red blood cells or lower hemoglobin; please consult your doctor.",
+      "high_meaning": "Higher hematocrit can relate to dehydration or elevated red cell volume; please consult your doctor."
     }
   ]
 }

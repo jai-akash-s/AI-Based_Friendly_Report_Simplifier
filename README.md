@@ -8,19 +8,36 @@ An AI-assisted Flask and React application that extracts text from medical repor
 - Extract patient details and medical entities.
 - Explain the general uses of recognized medicines using a local generic/brand catalog, with fuzzy matches clearly marked for confirmation.
 - Allow patients to correct an OCR'd medicine name and rerun its lookup.
+- Detect multi-drug combinations and highlight potential drug interactions with doctor discussion prompts.
 - Parse common laboratory values (including Hemoglobin, WBC, RBC, Platelets, Glucose, Cholesterol, LDL, HDL, Creatinine, TSH, and HbA1c) using report ranges when present and a bundled adult reference catalog otherwise.
+- Differentiate High (amber/orange) vs. Low (cyan/blue) vs. Critical (crimson) vs. Normal (emerald green) lab metrics with exact-color print styling.
+- Visualize numeric lab results with interactive, color-zoned reference range gauge bars.
+- Generate a Doctor Appointment Summary Sheet with a mobile-scannable QR code directing to a responsive digital summary (`/reports/<id>/summary`).
 - Store structured laboratory results with each SQLite report; the existing startup migration safely adds missing columns to databases created by earlier versions.
 - Review lab statuses, glossary explanations, the original report text, and a simplified explanation side by side.
 - Generate questions for a doctor from abnormal low/high results.
-- View a patient's same-test history in a Recharts trend graph.
+- View a patient's same-test history in an interactive Recharts trend graph and automated clinical timeline.
 - Select English, Tamil, or Hindi generated output. Tamil/Hindi translation uses the configured Gemini service; the original report text is not sent by the translation endpoint.
-- Read the simplified summary aloud with the browser's Web Speech API.
+- Read the simplified summary aloud with the browser's Web Speech API and variable playback speeds.
 - Show a safety disclaimer on report results and exports; generated summaries avoid confirming diagnoses or prescribing treatment.
 - Evaluate Flesch Reading Ease and Flesch-Kincaid grade, and measure lab extraction against a small labeled sample set.
+- Delete individual patient records with cascading deletion of uploaded files, reports, and reminders.
 - Delete a report or an entire signed-in account, including related database rows and uploaded report files.
 - Mask a patient's name and ID in the displayed and printed result view.
 - Download a formatted PDF report.
 - Sign in locally or with Google OAuth; store patients and reports separately for each account.
+- **Role-Based Access Control**:
+  - Superadmin account automatically designated for **`akash.saravanan1797@gmail.com`** (protected from demotion/deletion).
+  - All other registered accounts default to standard **`user`** roles with self-contained patient and report data isolation.
+  - Dedicated **Admin Portal** (`#/admin`) for system administrators to view real-time platform statistics, promote/demote user permissions, audit system events, and purge inactive user accounts.
+  - Non-admin users attempting to access administrative endpoints or views receive 403 access control barriers.
+- **BytsOne-Inspired Modern Dashboard**:
+  - Left navigation sidebar featuring brand styling, categorized navigation groups (Overview, Learning, Management), and active status indicators.
+  - Top header bar with hamburger drawer toggle, theme switch, role badges (`Admin` vs. `User`), and initial avatar badges (`JA` / `AS`).
+  - Welcome Banner with dynamic user personalization, activity subtext, and quick action buttons.
+  - Middle 2-column layout: 2x2 **Assessment Activity** grid (`TESTS ASSIGNED`, `TESTS COMPLETED`, `QUESTIONS ATTEMPTED`, `TOTAL TIME SPENT`) and **Announcements** empty state.
+  - Progress section: **Courses in Progress** / active reports card and **Global Platform Profiles** integration.
+  - Interactive bottom-right **Floating AI Assistant** widget.
 
 ## Project structure
 
@@ -88,7 +105,11 @@ The raw Kaggle dataset is staged at `data/kaggle/A_Z_medicines_dataset_of_India.
 
 | Method | Path | Description |
 | --- | --- | --- |
+| `GET` | `/api/patients` / `/patients/api/list` | List all registered patients for the authenticated account. |
+| `DELETE` | `/api/patients/<patient_id>` / `/patients/api/<patient_id>` | Delete a patient, cascading to all owned reports, uploaded files, and reminders. |
+| `GET` | `/api/patients/<patient_id>/timeline` | Retrieve chronological report timeline and trajectory for a patient. |
 | `GET` | `/api/patients/<patient_id>/lab-trends?test=Hemoglobin` | Return one owned patient's values for a test, in report-date order. |
+| `GET` | `/reports/<report_id>/summary` | Public, responsive mobile summary view for doctor visit QR code scans. |
 | `GET` | `/api/reports/<report_id>/evaluation` | Return readability metrics for the report and labeled lab-extraction metrics. |
 | `POST` | `/api/reports/<report_id>/translate` | Translate generated output; JSON body: `{"language":"ta"}` or `{"language":"hi"}`. `en` returns English output. |
 | `POST` | `/api/reports/<report_id>/medicine-lookup` | Rerun an owned medicine entity lookup after correction; JSON body: `{"entity_id":1,"name":"corrected name"}`. |
@@ -96,7 +117,7 @@ The raw Kaggle dataset is staged at `data/kaggle/A_Z_medicines_dataset_of_India.
 | `DELETE` | `/api/reports/<report_id>` | Delete an owned report, its dependent rows, and its uploaded file. |
 | `DELETE` | `/api/account` | Delete the signed-in account and its related reports, patients, audit rows, and report files. |
 
-All listed endpoints require an authenticated session. Normal CSRF configuration also applies to deletion, translation, and medicine lookup requests.
+All listed endpoints require an authenticated session (except the public QR `/reports/<report_id>/summary` designed for mobile clinician visits). Normal CSRF configuration also applies to deletion, mutation, translation, and medicine lookup requests.
 
 ## Run tests
 

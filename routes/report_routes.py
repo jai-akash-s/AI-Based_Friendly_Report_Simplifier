@@ -4,7 +4,7 @@ import json
 
 from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, send_file, url_for
 
-from database.models import MedicalEntity, MedicalReport, Patient, db, safe_json_list
+from database.models import MedicalEntity, MedicalReport, Patient, Reminder, db, safe_json_list
 from routes.auth_routes import get_current_user, log_audit, login_required, require_role
 from services.doctor_questions import generate_doctor_questions
 from services.lab_trends import build_lab_trend
@@ -81,12 +81,68 @@ def dashboard_stats():
 	for report in reports:
 		for entity in report.entities:
 			condition_counts[entity.entity_text] = condition_counts.get(entity.entity_text, 0) + 1
+	reminders = Reminder.query.filter_by(owner_id=user.id, status="pending").order_by(Reminder.created_at.desc()).limit(6).all()
 	return jsonify({
 		"patient_count": Patient.query.filter_by(owner_id=user.id).count(),
 		"report_count": len(reports),
 		"reports_this_month": sum(1 for report in reports if is_from_current_month(report)),
 		"most_common_conditions": sorted(condition_counts.items(), key=lambda item: item[1], reverse=True)[:5],
+		"reminders": [r.to_dict() for r in reminders],
+		"pending_reminders_count": Reminder.query.filter_by(owner_id=user.id, status="pending").count(),
 	})
+
+
+@report_bp.route("/api/reminders", methods=["GET", "POST"])
+@login_required
+def handle_reminders():
+	user = get_current_user()
+	if request.method == "POST":
+		payload = request.get_json(silent=True) or {}
+		title = str(payload.get("title", "")).strip()
+		if not title:
+			return jsonify({"error": "Reminder title is required."}), 400
+		reminder = Reminder(
+			owner_id=user.id,
+			patient_id=payload.get("patient_id"),
+			report_id=payload.get("report_id"),
+			title=title,
+			due_text=str(payload.get("due_text", "")).strip() or "Scheduled",
+			tag=str(payload.get("tag", "info")).strip() or "info",
+			notes=str(payload.get("notes", "")).strip(),
+			status="pending",
+		)
+		db.session.add(reminder)
+		db.session.commit()
+		return jsonify(reminder.to_dict()), 201
+
+	reminders = Reminder.query.filter_by(owner_id=user.id).order_by(
+		Reminder.status.asc(), Reminder.created_at.desc()
+	).all()
+	return jsonify([r.to_dict() for r in reminders])
+
+
+@report_bp.route("/api/reminders/<int:reminder_id>", methods=["PATCH", "DELETE"])
+@login_required
+def modify_reminder(reminder_id):
+	user = get_current_user()
+	reminder = Reminder.query.filter_by(id=reminder_id, owner_id=user.id).first_or_404()
+	if request.method == "DELETE":
+		db.session.delete(reminder)
+		db.session.commit()
+		return jsonify({"deleted": True})
+
+	payload = request.get_json(silent=True) or {}
+	if "status" in payload:
+		reminder.status = "completed" if payload["status"] == "completed" else "pending"
+	if "title" in payload and payload["title"].strip():
+		reminder.title = payload["title"].strip()
+	if "due_text" in payload:
+		reminder.due_text = payload["due_text"].strip()
+	if "notes" in payload:
+		reminder.notes = payload["notes"].strip()
+	db.session.commit()
+	return jsonify(reminder.to_dict())
+
 
 
 @report_bp.route("/api/patients/<int:patient_id>/timeline", methods=["GET"])
@@ -244,6 +300,23 @@ def export_report(report_id, file_format):
 	if file_format == "json":
 		return jsonify(data)
 	if file_format == "txt":
+		lab_lines = []
+		if data.get("lab_results"):
+			lab_lines = [
+				"",
+				"Laboratory results:",
+				*[
+					f"- {lab.get('test_name')}: {lab.get('value')} {lab.get('unit') or ''} (Status: {lab.get('status')})"
+					for lab in data["lab_results"]
+				],
+			]
+		questions_lines = []
+		if data.get("questions_to_ask_doctor"):
+			questions_lines = [
+				"",
+				"Questions to ask your doctor:",
+				*[f"- {q}" for q in data["questions_to_ask_doctor"]],
+			]
 		content = "\n".join([
 			data["title"],
 			f"Patient: {data['patient']['name'] or 'Unassigned'}",
@@ -251,9 +324,14 @@ def export_report(report_id, file_format):
 			"",
 			"Simplified summary:",
 			data["simplified_summary"] or "No summary available.",
+			*lab_lines,
 			"",
 			"Medical terms:",
-			*[f"- {item['text']} ({item['label']}): {item['explanation']}" for item in data["entities"]],
+			*[
+				f"- {item.get('text') or item.get('name')} ({item.get('label') or 'TERM'}): {item.get('explanation') or item.get('general_use') or item.get('use') or 'Prescription medication noted in report.'}"
+				for item in data["entities"]
+			],
+			*questions_lines,
 			"",
 			data["disclaimer"],
 		])
@@ -267,20 +345,26 @@ def export_report(report_id, file_format):
 				download_name="medical-report.pdf",
 				mimetype="application/pdf",
 			)
-		content_lines = [
-			data["title"],
-			f"Patient: {data['patient']['name'] or 'Unassigned'}",
-			f"Date: {data['created_at'] or 'Unavailable'}",
-			"",
-			"Simplified summary:",
-			data["simplified_summary"] or "No summary available.",
-			"",
-			data["disclaimer"],
-		]
 		from docx import Document
 		document = Document()
-		for line in content_lines:
-			document.add_paragraph(line)
+		document.add_heading(data["title"], level=1)
+		document.add_paragraph(f"Patient: {data['patient']['name'] or 'Unassigned'}  |  Date: {data['created_at'] or 'Unavailable'}")
+		document.add_heading("Simplified summary", level=2)
+		document.add_paragraph(data["simplified_summary"] or "No summary available.")
+		if data.get("lab_results"):
+			document.add_heading("Laboratory results", level=2)
+			for lab in data["lab_results"]:
+				document.add_paragraph(f"• {lab.get('test_name')}: {lab.get('value')} {lab.get('unit') or ''} (Status: {lab.get('status')})")
+		if data.get("entities"):
+			document.add_heading("Medical terms", level=2)
+			for item in data["entities"]:
+				exp = item.get('explanation') or item.get('general_use') or item.get('use') or 'Prescription medication noted in report.'
+				document.add_paragraph(f"• {item.get('text') or item.get('name')}: {exp}")
+		if data.get("questions_to_ask_doctor"):
+			document.add_heading("Questions to ask your doctor", level=2)
+			for q in data["questions_to_ask_doctor"]:
+				document.add_paragraph(f"• {q}")
+		document.add_paragraph(data["disclaimer"])
 		output = io.BytesIO()
 		document.save(output)
 		output.seek(0)
@@ -312,6 +396,29 @@ def translate_report(report_id):
 	except TranslationProviderError as error:
 		current_app.logger.warning("Report translation failed: %s", error)
 		return jsonify({"error": str(error)}), 502
+
+
+@report_bp.route("/reports/<int:report_id>/summary", methods=["GET"])
+@report_bp.route("/api/reports/<int:report_id>/summary", methods=["GET"])
+def public_report_summary(report_id):
+	"""Public, scannable, mobile-responsive appointment summary page for QR code visits."""
+	report = MedicalReport.query.filter_by(id=report_id).first_or_404()
+	patient = report.patient
+	report_data = report.to_dict()
+
+	if request.path.startswith("/api/") or "json" in request.headers.get("Accept", ""):
+		return jsonify({
+			"patient": patient.to_dict() if patient else None,
+			"report": report_data,
+		})
+
+	return render_template(
+		"summary_qr.html",
+		report=report,
+		patient=patient,
+		report_data=report_data,
+		disclaimer=DISCLAIMER,
+	)
 
 
 @report_bp.route("/reports/<int:report_id>/download", methods=["GET"])

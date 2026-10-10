@@ -96,32 +96,72 @@ def ai_simplify(term: str, context_sentence: str):
 
 
 def _build_plain_language_summary(text: str, entities: list) -> str | None:
-    terms = {entity["text"].split(":", 1)[0].strip().lower() for entity in entities}
-    if not {"anxiety", "gastric"}.issubset(terms):
-        return None
+    if not entities:
+        return "No medical terms detected. Please consult your doctor."
 
-    summary = (
-        "Your report mentions anxiety and gastric (stomach-related) concerns. "
-    )
+    terms = {entity["text"].split(":", 1)[0].strip().lower() for entity in entities}
+    if {"anxiety", "gastric"}.issubset(terms):
+        summary = (
+            "Your report mentions anxiety and gastric (stomach-related) concerns. "
+        )
+        bp_match = re.search(r"\bBP\s*[:=\-]?\s*(\d{2,3})\s*/\s*(\d{2,3})\b", text, re.IGNORECASE)
+        if bp_match:
+            reading = f"{bp_match.group(1)}/{bp_match.group(2)}"
+            summary += (
+                f"It records a blood pressure of {reading}. One reading alone does not diagnose "
+                "high blood pressure, but it is worth rechecking and discussing with your clinician. "
+            )
+
+        if any(entity.get("label") in {"MEDICINE", "MEDICATION"} for entity in entities):
+            summary += (
+                "The prescription includes handwritten medicine names; confirm any unclear name or "
+                "dose with your prescriber or pharmacist. Follow the prescription and do not change "
+                "medicines based on this summary. "
+            )
+
+        if re.search(r"follow[\s-]*up[^\n]{0,30}(?:1|one)\s*month", text, re.IGNORECASE):
+            summary += "The report asks you to follow up in one month."
+
+        return f"{summary.strip()} Please consult your doctor for interpretation."
+
+    term_texts = [entity["text"].split(":", 1)[0].strip() for entity in entities]
+    unique_terms = []
+    for t in term_texts:
+        if t and t not in unique_terms:
+            unique_terms.append(t)
+
+    mentioned = ", ".join(unique_terms[:6])
+    if len(unique_terms) > 6:
+        mentioned += f", and {len(unique_terms) - 6} other findings"
+
+    summary_parts = [
+        f"The report mentions {mentioned}. These findings may need interpretation in clinical context."
+    ]
+
     bp_match = re.search(r"\bBP\s*[:=\-]?\s*(\d{2,3})\s*/\s*(\d{2,3})\b", text, re.IGNORECASE)
     if bp_match:
         reading = f"{bp_match.group(1)}/{bp_match.group(2)}"
-        summary += (
+        summary_parts.append(
             f"It records a blood pressure of {reading}. One reading alone does not diagnose "
-            "high blood pressure, but it is worth rechecking and discussing with your clinician. "
+            "high blood pressure, but it is worth rechecking and discussing with your clinician."
         )
 
-    if any(entity["label"] in {"MEDICINE", "MEDICATION"} for entity in entities):
-        summary += (
-            "The prescription includes handwritten medicine names; confirm any unclear name or "
-            "dose with your prescriber or pharmacist. Follow the prescription and do not change "
-            "medicines based on this summary. "
+    has_medicines = any(
+        entity.get("label") in {"MEDICINE", "MEDICATION"} for entity in entities
+    )
+    if has_medicines:
+        summary_parts.append(
+            "Medications are noted in your report; please confirm all instructions, dosages, "
+            "and schedules with your doctor or pharmacist, and do not change medicines based on this summary."
         )
 
     if re.search(r"follow[\s-]*up[^\n]{0,30}(?:1|one)\s*month", text, re.IGNORECASE):
-        summary += "The report asks you to follow up in one month."
+        summary_parts.append("The report asks you to follow up in one month.")
+    elif re.search(r"follow[\s-]*up", text, re.IGNORECASE):
+        summary_parts.append("The report includes follow-up guidance.")
 
-    return f"{summary.strip()} Please consult your doctor for interpretation."
+    summary_parts.append("Please consult your doctor for interpretation.")
+    return " ".join(summary_parts)
 
 
 def generate_recommendations(entities: list, use_ai_fallback: bool = True):

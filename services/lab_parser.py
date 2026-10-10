@@ -41,27 +41,42 @@ _ALIASES = sorted(
 )
 
 
+_SINGLE_BOUND_RANGE_PATTERN = re.compile(
+    r"(?P<op>[<>]=?)\s*(?P<bound>\d+(?:[.,]\d+)?)(?:\s*(?P<unit>[A-Za-zµμ/%^0-9]+(?:\s*/\s*[A-Za-zµμ0-9]+)?))?",
+    re.IGNORECASE,
+)
+
+
 def _number(value):
     return float(value.replace(",", "."))
 
 
 def _find_range(text):
     match = _RANGE_PATTERN.search(text)
-    if not match:
-        return None
-    return {
-        "low": _number(match.group("low")),
-        "high": _number(match.group("high")),
-        "unit": (match.group("unit") or "").strip() or None,
-        "source": "report",
-    }
+    if match:
+        return {
+            "low": _number(match.group("low")),
+            "high": _number(match.group("high")),
+            "unit": (match.group("unit") or "").strip() or None,
+            "source": "report",
+        }
+    single_match = _SINGLE_BOUND_RANGE_PATTERN.search(text)
+    if single_match:
+        bound = _number(single_match.group("bound"))
+        op = single_match.group("op")
+        unit = (single_match.group("unit") or "").strip() or None
+        if op.startswith("<"):
+            return {"low": 0.0, "high": bound, "unit": unit, "source": "report"}
+        elif op.startswith(">"):
+            return {"low": bound, "high": float("inf"), "unit": unit, "source": "report"}
+    return None
 
 
 def _test_match(line):
     for alias, test in _ALIASES:
         match = re.search(rf"(?<![\w]){re.escape(alias)}(?![\w])", line, re.IGNORECASE)
         if match:
-            remainder = line[match.end():].lstrip(" :\t=")
+            remainder = line[match.end():].lstrip(" :\t=|,-")
             value_match = _NUMBER_PATTERN.match(remainder)
             if value_match:
                 return test, remainder, value_match

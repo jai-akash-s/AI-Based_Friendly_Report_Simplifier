@@ -45,7 +45,7 @@ def extract_patient_info(text: str) -> dict[str, Any]:
         for candidate in re.findall(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b", normalized):
             if candidate.lower() in {"bp", "spo2", "rx", "t.", "pharmacy"}:
                 continue
-            if re.search(r"\b(?:Age|Sex|Gender|Blood|Phone|DOB)\b", candidate, re.IGNORECASE):
+            if re.search(r"\b(?:Age|Sex|Gender|Blood|Phone|DOB|Road|Street|Avenue|Lane|Hospital|Clinic|Diagnostic|Laboratory|Lab|Center|Centre|Medical|Health|Care|Pathology|Nagar|Colony)\b", candidate, re.IGNORECASE):
                 continue
             full_name = candidate
             break

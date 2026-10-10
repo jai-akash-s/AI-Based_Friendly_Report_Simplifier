@@ -11,7 +11,12 @@
     "hypothyroidism": "Your thyroid gland isn't making enough hormone, which can slow down your body.",
     "hyperthyroidism": "Your thyroid gland is making too much hormone, speeding up your body's processes.",
     "osteoarthritis": "Wear-and-tear damage to joint cartilage, causing pain and stiffness.",
-    "chronic kidney disease": "Your kidneys are gradually losing their ability to filter waste from your blood."
+    "chronic kidney disease": "Your kidneys are gradually losing their ability to filter waste from your blood.",
+    "asthma": "A chronic condition that inflames and narrows airways, making breathing difficult at times.",
+    "fatty liver": "An accumulation of extra fat in liver cells that warrants metabolic and lifestyle review.",
+    "jaundice": "A yellowish tint of the skin or eyes caused by elevated bilirubin levels.",
+    "gout": "A painful form of arthritis caused by uric acid crystal buildup in the joints.",
+    "gerd": "Gastroesophageal reflux disease — stomach acid frequently flows back into the tube connecting your mouth and stomach."
   },
   "medicines": {
     "metformin": "A common medicine to help control blood sugar in diabetes.",
@@ -41,7 +46,16 @@
     "bp": "Blood pressure — the force of blood moving through your blood vessels.",
     "bmi": "Body Mass Index — a screening measure comparing weight with height.",
     "ecg": "Electrocardiogram — a test that records the heart's electrical activity.",
-    "cbc": "Complete Blood Count — a group of tests measuring blood cells."
+    "cbc": "Complete Blood Count — a group of tests measuring blood cells.",
+    "sgpt": "Serum Glutamic Pyruvic Transaminase (ALT) — an enzyme found mainly in the liver.",
+    "sgot": "Serum Glutamic Oxaloacetic Transaminase (AST) — an enzyme found in liver and heart tissues.",
+    "alt": "Alanine Aminotransferase — an enzyme that helps check for liver injury.",
+    "ast": "Aspartate Aminotransferase — an enzyme used alongside ALT to evaluate liver health.",
+    "urea": "A waste product formed in the liver and eliminated by the kidneys.",
+    "bun": "Blood Urea Nitrogen — measures the amount of nitrogen in blood from waste product urea.",
+    "uric acid": "A chemical produced when your body breaks down foods containing purines.",
+    "rbc": "Red Blood Cell count — indicates the volume of oxygen-carrying cells.",
+    "glucose": "Blood sugar — the main source of energy for your body's cells."
   },
   "recommendations": {
     "anxiety": {

@@ -118,6 +118,25 @@ def extract_text_from_pdf(pdf_path: str) -> dict:
         for i, page in enumerate(pdf.pages):
             digital_text = (page.extract_text() or "").strip()
 
+            # Extract any structured tables from this page to handle multi-column reports
+            extracted_tables = []
+            try:
+                tables = page.extract_tables() or []
+                for table in tables:
+                    for row in table:
+                        cells = [str(c).strip() for c in (row or []) if c is not None and str(c).strip()]
+                        if len(cells) >= 2:
+                            extracted_tables.append(" | ".join(cells))
+            except Exception:
+                pass
+
+            if extracted_tables:
+                table_block = "\n".join(extracted_tables)
+                if digital_text:
+                    digital_text = f"{digital_text}\n\n{table_block}"
+                else:
+                    digital_text = table_block
+
             if len(digital_text) >= MIN_CHARS_FOR_DIGITAL_PAGE:
                 pages_info.append({"page": i + 1, "method": "digital", "text": digital_text, "confidence": None})
             else:

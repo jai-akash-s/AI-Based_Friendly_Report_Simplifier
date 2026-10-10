@@ -14,7 +14,7 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
-    CSRF_ENABLED = os.environ.get("CSRF_ENABLED", "false").lower() == "true"
+    CSRF_ENABLED = os.environ.get("CSRF_ENABLED", "true").lower() == "true"
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
     }
