@@ -37,6 +37,10 @@ def _is_api_request():
 
 
 def get_current_user():
+    expected_instance = current_app.config.get("SERVER_INSTANCE_ID")
+    if expected_instance and session.get("server_instance_id") != expected_instance:
+        session.clear()
+        return None
     user_id = session.get("user_id")
     if user_id:
         user = db.session.get(User, user_id)
@@ -109,7 +113,8 @@ def sign_in_user(email, display_name=None, provider="local"):
     session["user_id"] = user.id
     session["user_email"] = user.email
     session["auth_provider"] = user.provider
-    session.permanent = True
+    session["server_instance_id"] = current_app.config.get("SERVER_INSTANCE_ID")
+    session.permanent = False
     log_audit("login", user=user)
     return user
 
@@ -155,6 +160,10 @@ def init_oauth(app):
 @auth_bp.route("/api/login", methods=["POST"])
 def login():
     """Authenticate a local workspace user and start their session."""
+    expected_instance = current_app.config.get("SERVER_INSTANCE_ID")
+    if expected_instance and session.get("server_instance_id") != expected_instance:
+        session.clear()
+
     if session.get("authenticated"):
         if _is_api_request():
             return jsonify({"authenticated": True, "user_email": session.get("user_email", "Workspace user")})
@@ -189,7 +198,8 @@ def entrypoint():
     frontend_index = os.path.join(current_app.config["FRONTEND_DIST"], "index.html")
     if os.path.exists(frontend_index):
         return send_from_directory(current_app.config["FRONTEND_DIST"], "index.html")
-    if session.get("authenticated"):
+    expected_instance = current_app.config.get("SERVER_INSTANCE_ID")
+    if session.get("authenticated") and (not expected_instance or session.get("server_instance_id") == expected_instance):
         return redirect(url_for("upload.home"))
     return render_template("login.html", google_enabled=google_oauth_configured())
 
@@ -197,6 +207,10 @@ def entrypoint():
 @auth_bp.route("/register", methods=["GET", "POST"])
 @auth_bp.route("/api/register", methods=["POST"])
 def register():
+    expected_instance = current_app.config.get("SERVER_INSTANCE_ID")
+    if expected_instance and session.get("server_instance_id") != expected_instance:
+        session.clear()
+
     if session.get("authenticated"):
         if _is_api_request():
             return jsonify({"authenticated": True, "user_email": session.get("user_email", "Workspace user")})
@@ -236,6 +250,10 @@ def register():
 
 @auth_bp.route("/api/auth/session", methods=["GET"])
 def api_session():
+    expected_instance = current_app.config.get("SERVER_INSTANCE_ID")
+    if expected_instance and session.get("server_instance_id") != expected_instance:
+        session.clear()
+        return jsonify({"authenticated": False}), 401
     if not session.get("authenticated"):
         return jsonify({"authenticated": False}), 401
     user = get_current_user()
@@ -251,6 +269,9 @@ def api_session():
         "role": "admin" if is_admin else (user.role or "user"),
         "is_admin": is_admin,
         "provider": user.provider or "local",
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "report_count": len(user.reports) if user.reports else 0,
+        "patient_count": len(user.patients) if user.patients else 0,
     })
 
 

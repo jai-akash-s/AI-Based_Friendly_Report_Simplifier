@@ -16,7 +16,11 @@
     "fatty liver": "An accumulation of extra fat in liver cells that warrants metabolic and lifestyle review.",
     "jaundice": "A yellowish tint of the skin or eyes caused by elevated bilirubin levels.",
     "gout": "A painful form of arthritis caused by uric acid crystal buildup in the joints.",
-    "gerd": "Gastroesophageal reflux disease — stomach acid frequently flows back into the tube connecting your mouth and stomach."
+    "gerd": "Gastroesophageal reflux disease — stomach acid frequently flows back into the tube connecting your mouth and stomach.",
+    "cold": "Common cold — a viral infection of the upper respiratory tract causing congestion, sneezing, and sore throat.",
+    "fever": "Elevated body temperature often signaling the body's immune response to an infection.",
+    "cold and fever": "Cold accompanied by fever — acute viral symptoms affecting body temperature and the respiratory tract.",
+    "common cold": "A viral upper respiratory infection causing sneezing, sore throat, and nasal congestion."
   },
   "medicines": {
     "metformin": "A common medicine to help control blood sugar in diabetes.",
@@ -30,7 +34,13 @@
     "ambulax": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist.",
     "pathil plus": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist.",
     "placed": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist.",
-    "eropet 40": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist."
+    "eropet 40": "A handwritten brand name in this prescription. Confirm the active ingredient and dose with the prescriber or pharmacist.",
+    "dolomi plus": "A medicine typically containing paracetamol used for fever and pain relief.",
+    "cetzine": "Cetirizine — an antihistamine commonly used to relieve allergy, cold, and sneezing symptoms.",
+    "darochlora": "A brand name in this prescription. Confirm the exact medicine and dose with your doctor or pharmacist.",
+    "moxidane": "A brand name in this prescription. Confirm the exact medicine and dose with your doctor or pharmacist.",
+    "pantokid": "A brand name containing pantoprazole used to reduce stomach acid.",
+    "electrolyte powder": "Oral Rehydration Salts (ORS) / electrolyte powder used to restore hydration and electrolytes lost during illness."
   },
   "lab_terms": {
     "hba1c": "A test showing your average blood sugar level over the past 2-3 months.",
@@ -386,6 +396,63 @@
         "Low-impact exercise like swimming, water aerobics, or walking to reduce inflammation"
       ],
       "exercise_precautions": "Do not overexert during acute inflammation flare-ups."
+    },
+    "cold and fever": {
+      "foods_to_eat": [
+        "Drink hot water",
+        "[Ginger Tea: Ginger tea can help ease nasal congestion and provide comfort when the throat feels scratchy.](https://askdocdoc.com/articles/705-what-to-eat-and-avoid-during-fever-a-complete-guide)[1](https://askdocdoc.com/articles/705-what-to-eat-and-avoid-during-fever-a-complete-guide)",
+        "[Herbal Teas: Herbal teas like tulsi, ginger, and mint can be therapeutic and help with cold and cough symptoms.](https://www.medicalnewstoday.com/articles/321786)[1](https://www.medicalnewstoday.com/articles/321786)",
+        "[Warm Soups and Broths: Chicken soup and vegetable broths can keep you hydrated and help clear nasal passages.](https://www.medicalnewstoday.com/articles/321786)[1](https://www.medicalnewstoday.com/articles/321786)",
+        "[Hydration: Staying hydrated is crucial. Warm water, herbal teas, and clear soups can help soothe an irritated throat and reduce congestion.](https://www.medicalnewstoday.com/articles/321786)[1](https://www.medicalnewstoday.com/articles/321786)"
+      ],
+      "foods_to_avoid": [
+        "Avoid cold water",
+        "Chilled or iced drinks and cold foods that may aggravate throat irritation",
+        "Deep-fried, heavy, and spicy meals that are difficult to digest during fever"
+      ],
+      "recommended_exercise": [
+        "Prioritize complete bed rest and restorative sleep to support immune recovery",
+        "Gentle indoor walking or stretching only if tolerated; avoid strenuous workouts"
+      ],
+      "exercise_precautions": "[These foods can help support your recovery and alleviate symptoms when you're dealing with a fever and cold. It's important to focus on easy digestion, comfort, and steady nourishment to support your body's natural healing process.](https://www.1mg.com/articles/web-stories/foods-to-consume-during-fever-and-cold/)"
+    },
+    "cold": {
+      "foods_to_eat": [
+        "Drink hot water",
+        "[Ginger Tea: Ginger tea can help ease nasal congestion and provide comfort when the throat feels scratchy.](https://askdocdoc.com/articles/705-what-to-eat-and-avoid-during-fever-a-complete-guide)[1](https://askdocdoc.com/articles/705-what-to-eat-and-avoid-during-fever-a-complete-guide)",
+        "[Herbal Teas: Herbal teas like tulsi, ginger, and mint can be therapeutic and help with cold and cough symptoms.](https://www.medicalnewstoday.com/articles/321786)[1](https://www.medicalnewstoday.com/articles/321786)",
+        "[Warm Soups and Broths: Chicken soup and vegetable broths can keep you hydrated and help clear nasal passages.](https://www.medicalnewstoday.com/articles/321786)[1](https://www.medicalnewstoday.com/articles/321786)",
+        "[Hydration: Staying hydrated is crucial. Warm water, herbal teas, and clear soups can help soothe an irritated throat and reduce congestion.](https://www.medicalnewstoday.com/articles/321786)[1](https://www.medicalnewstoday.com/articles/321786)"
+      ],
+      "foods_to_avoid": [
+        "Avoid cold water",
+        "Chilled or iced drinks and cold foods that may aggravate throat irritation",
+        "Deep-fried, heavy, and spicy meals that are difficult to digest"
+      ],
+      "recommended_exercise": [
+        "Prioritize complete bed rest and restorative sleep to support immune recovery",
+        "Gentle indoor walking or stretching only if tolerated; avoid strenuous workouts"
+      ],
+      "exercise_precautions": "[These foods can help support your recovery and alleviate symptoms when you're dealing with a fever and cold. It's important to focus on easy digestion, comfort, and steady nourishment to support your body's natural healing process.](https://www.1mg.com/articles/web-stories/foods-to-consume-during-fever-and-cold/)"
+    },
+    "fever": {
+      "foods_to_eat": [
+        "Drink hot water",
+        "[Ginger Tea: Ginger tea can help ease nasal congestion and provide comfort when the throat feels scratchy.](https://askdocdoc.com/articles/705-what-to-eat-and-avoid-during-fever-a-complete-guide)[1](https://askdocdoc.com/articles/705-what-to-eat-and-avoid-during-fever-a-complete-guide)",
+        "[Herbal Teas: Herbal teas like tulsi, ginger, and mint can be therapeutic and help with cold and cough symptoms.](https://www.medicalnewstoday.com/articles/321786)[1](https://www.medicalnewstoday.com/articles/321786)",
+        "[Warm Soups and Broths: Chicken soup and vegetable broths can keep you hydrated and help clear nasal passages.](https://www.medicalnewstoday.com/articles/321786)[1](https://www.medicalnewstoday.com/articles/321786)",
+        "[Hydration: Staying hydrated is crucial. Warm water, herbal teas, and clear soups can help soothe an irritated throat and reduce congestion.](https://www.medicalnewstoday.com/articles/321786)[1](https://www.medicalnewstoday.com/articles/321786)"
+      ],
+      "foods_to_avoid": [
+        "Avoid cold water",
+        "Chilled or iced drinks and cold foods that may aggravate throat irritation",
+        "Deep-fried, heavy, and spicy meals that are difficult to digest during fever"
+      ],
+      "recommended_exercise": [
+        "Prioritize complete bed rest and restorative sleep to support immune recovery",
+        "Gentle indoor walking or stretching only if tolerated; avoid strenuous workouts"
+      ],
+      "exercise_precautions": "[These foods can help support your recovery and alleviate symptoms when you're dealing with a fever and cold. It's important to focus on easy digestion, comfort, and steady nourishment to support your body's natural healing process.](https://www.1mg.com/articles/web-stories/foods-to-consume-during-fever-and-cold/)"
     }
   }
 }

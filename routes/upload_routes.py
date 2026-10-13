@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from core.extractor import OCRNotAvailableError, extract_text
 from core.gemini_analyzer import GeminiAnalysisError, analyze_medical_report
-from core.simplifier import simplify_report
+from core.simplifier import generate_recommendations, simplify_report
 from core.patient_extractor import extract_patient_info
 from core.lab_extractor import extract_lab_results
 from services.doctor_questions import generate_doctor_questions
@@ -255,7 +255,13 @@ def upload():
                 merged_entities,
             )
 
-            recommendations = result["recommendations"]
+            rec_text = (gemini_result.get("extracted_text") or text or "").strip()
+            recommendations = generate_recommendations(
+                merged_entities,
+                text=rec_text,
+                use_ai_fallback=False,
+            )
+            result["recommendations"] = recommendations
             aggregated = recommendations["aggregated"]
             has_dictionary_guidance = bool(recommendations.get("by_condition"))
             for output_key in ("foods_to_eat", "foods_to_avoid", "recommended_exercise"):

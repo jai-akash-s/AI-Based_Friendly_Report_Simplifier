@@ -215,7 +215,12 @@ export function Dashboard({ session }) {
             </div>
 
             {/* Cell 4: Reminders & Notes */}
-            <div className="byts-activity-cell">
+            <div
+              className="byts-activity-cell"
+              style={{ cursor: 'pointer' }}
+              onClick={() => go('/reminders')}
+              title="View all Care Reminders"
+            >
               <div className="byts-activity-icon-box amber">
                 <Clock size={20} />
               </div>

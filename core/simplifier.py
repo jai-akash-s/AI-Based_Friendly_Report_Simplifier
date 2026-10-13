@@ -44,8 +44,9 @@ def _get_hf_pipeline():
 def lookup_term(term: str):
     """Search all dictionary categories for a term, return explanation or None."""
     term = term.lower().strip().split(":", 1)[0].strip()
+    d = load_dictionary()
     for category in ["diseases", "medicines", "lab_terms"]:
-        terms = _dictionary.get(category, {})
+        terms = d.get(category, {})
         if term in terms:
             return terms[term]
     return None
@@ -54,7 +55,7 @@ def lookup_term(term: str):
 def lookup_recommendation(term: str):
     """Search dictionary recommendations for a specific term, with alias support."""
     term = term.lower().strip().split(":", 1)[0].strip()
-    recs = _dictionary.get("recommendations", {})
+    recs = load_dictionary().get("recommendations", {})
     if term in recs:
         return recs[term]
 
@@ -67,7 +68,15 @@ def lookup_recommendation(term: str):
         "heart attack": "myocardial infarction",
         "kidney disease": "chronic kidney disease",
         "low iron": "anemia",
-        "thyroid": "hypothyroidism"
+        "thyroid": "hypothyroidism",
+        "cold": "cold and fever",
+        "fever": "cold and fever",
+        "common cold": "cold and fever",
+        "viral fever": "cold and fever",
+        "cough and cold": "cold and fever",
+        "cold and cough": "cold and fever",
+        "pyrexia": "cold and fever",
+        "flu": "cold and fever",
     }
     target = aliases.get(term)
     if target and target in recs:
@@ -164,7 +173,7 @@ def _build_plain_language_summary(text: str, entities: list) -> str | None:
     return " ".join(summary_parts)
 
 
-def generate_recommendations(entities: list, use_ai_fallback: bool = True):
+def generate_recommendations(entities: list, text: str = "", use_ai_fallback: bool = True):
     """
     Generates personalized diet (food) and exercise recommendations based on
     detected medical conditions and lab findings.
@@ -179,16 +188,15 @@ def generate_recommendations(entities: list, use_ai_fallback: bool = True):
 
     for ent in entities:
         term_clean = ent["text"].lower().strip()
-        label = ent["label"]
+        label = ent.get("label", "")
 
-        if label not in {"DISEASE", "LAB_TERM"}:
+        rec = lookup_recommendation(term_clean)
+        if label not in {"DISEASE", "LAB_TERM", "SYMPTOM", "CONDITION"} and not rec:
             continue
 
         if term_clean in seen_conditions:
             continue
         seen_conditions.add(term_clean)
-
-        rec = lookup_recommendation(term_clean)
 
         if rec:
             cond_data = {
@@ -204,6 +212,33 @@ def generate_recommendations(entities: list, use_ai_fallback: bool = True):
             all_exercise.extend(rec.get("recommended_exercise", []))
             if rec.get("exercise_precautions"):
                 all_precautions.append(rec["exercise_precautions"])
+
+    # Cold & Fever contextual detection (from text keywords, or medication combinations)
+    has_cold_fever_text = bool(re.search(r"\b(cold\s*(?:and|&)?\s*fever|cold|fever|cough|flu|pyrexia|coryza)\b", text, re.IGNORECASE))
+
+    t_lower = text.lower()
+    med_names = [e.get("text", "").lower() for e in entities]
+    has_fever_med = any(any(f in m for f in ["dolomi", "dolo", "paracetamol", "crocin", "calpol", "pacimol"]) for m in med_names) or any(f in t_lower for f in ["dolomi", "dolo", "paracetamol", "crocin", "calpol", "pacimol"])
+    has_cold_med = any(any(c in m for c in ["cetzine", "cetirizine", "levocetirizine", "chlorpheniramine", "cold", "cough", "antihistamine"]) for m in med_names) or any(c in t_lower for c in ["cetzine", "cetirizine", "levocetirizine", "chlorpheniramine", "cold", "cough"])
+
+    if (has_cold_fever_text or (has_fever_med and has_cold_med)) and not any(c in seen_conditions for c in ["cold and fever", "cold", "fever"]):
+        rec = lookup_recommendation("cold and fever")
+        if rec:
+            seen_conditions.add("cold and fever")
+            cond_data = {
+                "condition": "Cold and Fever",
+                "foods_to_eat": rec.get("foods_to_eat", []),
+                "foods_to_avoid": rec.get("foods_to_avoid", []),
+                "recommended_exercise": rec.get("recommended_exercise", []),
+                "exercise_precautions": rec.get("exercise_precautions", "")
+            }
+            by_condition.append(cond_data)
+            all_eat.extend(rec.get("foods_to_eat", []))
+            all_avoid.extend(rec.get("foods_to_avoid", []))
+            all_exercise.extend(rec.get("recommended_exercise", []))
+            if rec.get("exercise_precautions"):
+                all_precautions.append(rec["exercise_precautions"])
+
     def _dedupe(lst):
         seen = set()
         res = []
@@ -244,7 +279,7 @@ def simplify_report(text: str, use_ai_fallback: bool = True):
         "recommendations": { ... }
     }
     """
-    entities = extract_entities(text, nlp=_nlp)
+    entities = extract_entities(text)
 
     enriched = []
     medication_detected = False
@@ -286,7 +321,7 @@ def simplify_report(text: str, use_ai_fallback: bool = True):
         if entity["label"] not in {"MEDICINE", "MEDICATION"}:
             entity["explanation"] = enforce_safe_explanation(entity["explanation"], entity["text"])
 
-    recommendations = generate_recommendations(entities, use_ai_fallback=use_ai_fallback)
+    recommendations = generate_recommendations(entities, text=text, use_ai_fallback=use_ai_fallback)
 
     return {
         "original_text": text.strip(),

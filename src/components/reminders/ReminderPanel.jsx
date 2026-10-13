@@ -80,7 +80,7 @@ export function ReminderPanel({ initialReminders = [], onUpdated }) {
   const pendingReminders = reminders.filter((r) => r.status !== 'completed');
 
   return (
-    <div className="panel reminder-panel">
+    <div id="reminders" className="panel reminder-panel reminders-card">
       <div className="section-title">
         <div>
           <p className="eyebrow">Follow-up</p>

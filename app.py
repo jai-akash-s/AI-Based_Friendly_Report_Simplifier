@@ -9,10 +9,12 @@ from routes.admin_routes import admin_bp
 from services.medicine_lookup import refresh_medicine_index
 
 import os
+import secrets
 from sqlalchemy import inspect, text
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config["SERVER_INSTANCE_ID"] = secrets.token_hex(16)
 root_dist = os.path.join(Config.BASE_DIR, "dist")
 root_public = os.path.join(Config.BASE_DIR, "public")
 app.config["FRONTEND_DIST"] = root_dist

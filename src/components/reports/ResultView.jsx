@@ -20,14 +20,46 @@ export function maskSensitiveText(value, enabled, identifiers) {
   }, String(value || ''));
 }
 
+function renderWithLinks(text) {
+  if (!text || typeof text !== 'string') return text;
+  const regex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  if (!regex.test(text)) return text;
+  regex.lastIndex = 0;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const [_, linkText, url] = match;
+    parts.push(
+      <a
+        key={`${url}-${match.index}`}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: 'var(--primary)', textDecoration: 'underline', wordBreak: 'break-word', fontWeight: 500 }}
+      >
+        {linkText}
+      </a>
+    );
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts;
+}
+
 export function Recommendation({ title, values = [] }) {
   return (
     <div>
       <b>{title}</b>
       {values.length > 0 ? (
         <ul>
-          {values.slice(0, 5).map((value) => (
-            <li key={value}>{value}</li>
+          {values.slice(0, 8).map((value, idx) => (
+            <li key={idx}>{renderWithLinks(value)}</li>
           ))}
         </ul>
       ) : (
@@ -595,7 +627,13 @@ export function ResultView({ response, onClose, onReanalyze }) {
               </div>
               {precautions.length > 0 && (
                 <div className="precautions-box">
-                  <strong>Precautions & Care Notes:</strong> {precautions.join(' · ')}
+                  <strong>Precautions & Care Notes:</strong>{' '}
+                  {precautions.map((p, idx) => (
+                    <span key={idx}>
+                      {idx > 0 && ' · '}
+                      {renderWithLinks(p)}
+                    </span>
+                  ))}
                 </div>
               )}
             </>

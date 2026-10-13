@@ -7,6 +7,7 @@ import { Dashboard } from './views/Dashboard';
 import { Patients } from './views/Patients';
 import { PatientDetail } from './views/PatientDetail';
 import { Reports } from './views/Reports';
+import { Reminders } from './views/Reminders';
 import { AdminPortal } from './views/AdminPortal';
 
 function App() {
@@ -25,9 +26,19 @@ function App() {
           setSession(data);
         } else {
           setSession(null);
+          if (window.location.hash) {
+            window.location.hash = '';
+          }
+          setPath('/dashboard');
         }
       })
-      .catch(() => setSession(null))
+      .catch(() => {
+        setSession(null);
+        if (window.location.hash) {
+          window.location.hash = '';
+        }
+        setPath('/dashboard');
+      })
       .finally(() => setChecking(false));
 
     return () => {
@@ -68,6 +79,8 @@ function App() {
     currentView = <Patients />;
   } else if (path === '/reports') {
     currentView = <Reports />;
+  } else if (path === '/reminders') {
+    currentView = <Reminders session={session} />;
   } else if (path === '/admin') {
     currentView = <AdminPortal session={session} />;
   } else {

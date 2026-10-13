@@ -51,6 +51,25 @@ class TestSimplifier(unittest.TestCase):
         self.assertTrue(recommendations["foods_to_avoid"])
         self.assertTrue(recommendations["recommended_exercise"])
 
+    def test_cold_and_fever_recommendations(self):
+        sample = "Patient presents with acute cold and fever symptoms."
+        result = simplify_report(sample, use_ai_fallback=False)
+        recs = result["recommendations"]["aggregated"]
+        self.assertIn("Drink hot water", recs["foods_to_eat"])
+        self.assertTrue(any("Ginger Tea" in item for item in recs["foods_to_eat"]))
+        self.assertTrue(any("Herbal Teas" in item for item in recs["foods_to_eat"]))
+        self.assertTrue(any("Warm Soups" in item for item in recs["foods_to_eat"]))
+        self.assertTrue(any("Hydration" in item for item in recs["foods_to_eat"]))
+        self.assertIn("Avoid cold water", recs["foods_to_avoid"])
+        self.assertTrue(any("recovery and alleviate symptoms" in item for item in recs["general_precautions"]))
+
+    def test_cold_fever_prescription_medicines(self):
+        sample = "Prescription: Dolomi Plus 1 tab TDS, Cetzine 1 tab OD at night. BP: 115/66."
+        result = simplify_report(sample, use_ai_fallback=False)
+        recs = result["recommendations"]["aggregated"]
+        self.assertIn("Drink hot water", recs["foods_to_eat"])
+        self.assertIn("Avoid cold water", recs["foods_to_avoid"])
+
 
 if __name__ == "__main__":
     unittest.main()
