@@ -7,6 +7,7 @@ import {
 import { api, go } from '../api/client';
 import { ResultView } from '../components/reports/ResultView';
 import { ReminderPanel } from '../components/reminders/ReminderPanel';
+import { HealthChatDrawer } from '../components/chat/HealthChatDrawer';
 
 export function Dashboard({ session }) {
   const [patients, setPatients] = useState([]);
@@ -17,6 +18,7 @@ export function Dashboard({ session }) {
   const [file, setFile] = useState(null);
   const [pastedText, setPastedText] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const recognitionRef = useRef(null);
 
   const getUserFirstName = () => {
@@ -426,14 +428,21 @@ export function Dashboard({ session }) {
         </aside>
       </section>
 
-      {/* 6. FLOATING ASSISTANT ICON (Matching Screenshot Bottom-Right Widget) */}
+      {/* 6. FLOATING ASSISTANT ICON (Interactive Health Clarity Chatbot) */}
       <div
         className="byts-floating-assistant"
-        title="AI Health Clarity Assistant"
-        onClick={scrollToUpload}
+        title="Open AI Health Clarity Assistant"
+        onClick={() => setShowChat(true)}
       >
         <Sparkles size={22} />
       </div>
+
+      <HealthChatDrawer
+        isOpen={showChat}
+        onClose={() => setShowChat(false)}
+        report={result?.report || result}
+        patient={result?.patient}
+      />
 
       {result && <ResultView response={result} onClose={() => setResult(null)} onReanalyze={reanalyzeCorrectedText} />}
     </>

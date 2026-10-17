@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   AlertTriangle, Check, Download, FileText, HeartPulse, Pill, Printer,
-  QrCode, Search, ShieldCheck, Sparkles, Volume2, X, Pause, Play,
+  Search, ShieldCheck, Sparkles, Volume2, X, Pause, Play,
 } from 'lucide-react';
 import { api } from '../../api/client';
 import { LabGauge } from './LabGauge';
-import { AppointmentSummarySheet } from './AppointmentSummarySheet';
+import { HealthChatDrawer } from '../chat/HealthChatDrawer';
 
 export const DISCLAIMER =
   'This tool is for understanding only, not a medical diagnosis or prescription. Educational summary only; this is not a diagnosis or treatment plan. Findings may have several explanations. Do not start, stop, or change treatment or medicines based on this summary; please consult your doctor.';
@@ -95,9 +95,81 @@ function HighlightedText({ text, query }) {
 
 export function ResultView({ response, onClose, onReanalyze }) {
   const result = response.result || {};
-  const patient = response.patient || {};
+  const rawPatient = response.patient || response.report?.patient || {};
   const extractedText = result.original_text || response.report?.extracted_text || '';
   const needsOcrReview = typeof result.extraction_confidence === 'number' && result.extraction_confidence < 65;
+
+  // Extract fallback patient details from extracted text if missing or dummy
+  const extractedPatient = React.useMemo(() => {
+    if (!extractedText || typeof extractedText !== 'string') return {};
+    const text = extractedText.trim();
+    const info = {};
+
+    const nameMatch = text.match(
+      /(?:patient\s*name|full\s*name|^name)\s*[:\-]\s*([A-Za-z0-9.\s]+?)(?=\s*(?:\n|,|\s{2,}|UHID|Age|Sex|Gender|Blood|Phone|Mobile|DOB|Date|$))/im
+    );
+    if (nameMatch && nameMatch[1].trim()) {
+      info.full_name = nameMatch[1].trim();
+    }
+
+    const ageGenderMatch = text.match(
+      /(?:age\s*\/\s*(?:sex|gender)|age)\s*[:\-]?\s*([0-9\sYMDymd]+?)(?:\s*\/\s*(male|female|m|f))?(?=\s*(?:\/|\n|,|\s{2,}|UHID|Sex|Gender|Blood|Phone|$))/i
+    );
+    if (ageGenderMatch) {
+      if (ageGenderMatch[1] && ageGenderMatch[1].trim()) {
+        info.age = ageGenderMatch[1].trim();
+      }
+      if (ageGenderMatch[2]) {
+        const rawG = ageGenderMatch[2].toLowerCase();
+        info.gender = rawG === 'm' ? 'Male' : rawG === 'f' ? 'Female' : rawG.charAt(0).toUpperCase() + rawG.slice(1);
+      }
+    }
+
+    const bloodMatch = text.match(
+      /(?:blood\s*(?:group|type)?|bld|bg)\s*[:\-]?\s*([ABO0][AB]?\s*(?:\+|\-|positive|negative|pos|neg)|[A-Z]{1,3}[+-])/i
+    );
+    if (bloodMatch && bloodMatch[1].trim()) {
+      info.blood_group = bloodMatch[1].trim().toUpperCase();
+    }
+
+    const phoneMatch = text.match(
+      /(?:phone|mobile|contact(?:\s*no)?|tel)\s*[:\-]?\s*(\+?\d[\d\s().-]{7,}\d)/i
+    );
+    if (phoneMatch && phoneMatch[1].trim()) {
+      info.contact_phone = phoneMatch[1].trim();
+    }
+
+    return info;
+  }, [extractedText]);
+
+  const isDummyName = (name) =>
+    !name ||
+    /^Report:\s*/i.test(name) ||
+    name === 'Patient Report' ||
+    name === 'Patient Record' ||
+    name === 'Medical Report Summary';
+
+  const patientName =
+    (!isDummyName(rawPatient.full_name) ? rawPatient.full_name : null) ||
+    (!isDummyName(response.report?.patient?.full_name) ? response.report?.patient?.full_name : null) ||
+    extractedPatient.full_name ||
+    (!rawPatient.full_name || isDummyName(rawPatient.full_name) ? 'Medical Report Summary' : rawPatient.full_name);
+
+  const patientAge = rawPatient.age ?? response.report?.patient?.age ?? extractedPatient.age ?? null;
+  const patientGender = rawPatient.gender || response.report?.patient?.gender || extractedPatient.gender || null;
+  const patientBlood = rawPatient.blood_group || response.report?.patient?.blood_group || extractedPatient.blood_group || null;
+  const patientPhone = rawPatient.contact_phone || rawPatient.phone || response.report?.patient?.contact_phone || extractedPatient.contact_phone || null;
+  const patientCode = rawPatient.patient_code || response.report?.patient?.patient_code || null;
+
+  const patient = {
+    ...rawPatient,
+    full_name: patientName,
+    age: patientAge,
+    gender: patientGender,
+    blood_group: patientBlood,
+    contact_phone: patientPhone,
+    patient_code: patientCode,
+  };
 
   const [showRaw, setShowRaw] = useState(needsOcrReview);
   const [draftText, setDraftText] = useState(extractedText);
@@ -114,15 +186,22 @@ export function ResultView({ response, onClose, onReanalyze }) {
   const [medicineErrors, setMedicineErrors] = useState({});
   const [confirmedMatches, setConfirmedMatches] = useState({});
 
-  // New UX Enhancements: Highlighting, Audio Controls, Appointment Sheet
+  // UX Enhancements: Highlighting, Audio Controls, AI Chat
   const [highlightQuery, setHighlightQuery] = useState('');
-  const [showAppointmentSheet, setShowAppointmentSheet] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [isPlayingSpeech, setIsPlayingSpeech] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
+  const [recViewMode, setRecViewMode] = useState('combined'); // 'combined' | 'by_condition'
   const originalColRef = useRef(null);
 
   const maskText = (value) =>
-    maskSensitiveText(value, maskIdentifiers, [patient.full_name, patient.patient_code]);
+    maskSensitiveText(value, maskIdentifiers, [
+      patient.full_name,
+      patient.patient_code,
+      patient.contact_phone,
+      rawPatient.full_name,
+      rawPatient.patient_code,
+    ]);
 
   useEffect(() => {
     setDraftText(extractedText);
@@ -154,10 +233,38 @@ export function ResultView({ response, onClose, onReanalyze }) {
   const drugInteractions = result.drug_interactions || response.report?.drug_interactions || [];
   const doctorQuestions =
     result.questions_to_ask_doctor || response.report?.questions_to_ask_doctor || [];
-  const foodsToEat = result.recommendations?.aggregated?.foods_to_eat || [];
-  const foodsToAvoid = result.recommendations?.aggregated?.foods_to_avoid || [];
-  const exercises = result.recommendations?.aggregated?.recommended_exercise || [];
-  const precautions = result.recommendations?.aggregated?.general_precautions || [];
+
+  const rawRecs = result.recommendations || response.report?.recommendations || [];
+  const byConditionList = Array.isArray(rawRecs)
+    ? rawRecs.map((r) => ({
+        condition: r.condition_name || 'Condition',
+        source_flag: r.source_flag || '',
+        foods_to_eat: r.foods_to_eat || [],
+        foods_to_avoid: r.foods_to_avoid || [],
+        recommended_exercise: r.recommended_exercise || [],
+        exercise_precautions: r.exercise_precautions || '',
+      }))
+    : rawRecs.by_condition || [];
+
+  const foodsToEat =
+    rawRecs.aggregated?.foods_to_eat?.length
+      ? rawRecs.aggregated.foods_to_eat
+      : Array.from(new Set(byConditionList.flatMap((r) => r.foods_to_eat || [])));
+
+  const foodsToAvoid =
+    rawRecs.aggregated?.foods_to_avoid?.length
+      ? rawRecs.aggregated.foods_to_avoid
+      : Array.from(new Set(byConditionList.flatMap((r) => r.foods_to_avoid || [])));
+
+  const exercises =
+    rawRecs.aggregated?.recommended_exercise?.length
+      ? rawRecs.aggregated.recommended_exercise
+      : Array.from(new Set(byConditionList.flatMap((r) => r.recommended_exercise || [])));
+
+  const precautions =
+    rawRecs.aggregated?.general_precautions?.length
+      ? rawRecs.aggregated.general_precautions
+      : Array.from(new Set(byConditionList.map((r) => r.exercise_precautions).filter(Boolean)));
   const translated = translation?.output || {};
 
   const handleLanguageChange = async (event) => {
@@ -280,9 +387,13 @@ export function ResultView({ response, onClose, onReanalyze }) {
   };
 
   const formatAge = (age) => {
-    if (age == null || age === '') return 'Age N/A';
+    if (age == null || age === '') return '';
     const clean = String(age).replace(/\s*(years?|yrs?)\b/gi, '').trim();
-    return clean ? `${clean} yrs` : 'Age N/A';
+    if (!clean) return '';
+    if (/\b(y|m|d|years?|yrs?|months?|days?)\b/i.test(String(age))) {
+      return String(age).trim();
+    }
+    return `${clean} yrs`;
   };
 
   return (
@@ -294,10 +405,15 @@ export function ResultView({ response, onClose, onReanalyze }) {
             <span className="status-dot">Analysis Complete · Patient Clarity</span>
             <h2>{maskText(patient.full_name || 'Medical Report Summary')}</h2>
             <p className="muted">
-              {patient.patient_code ? `${maskText(patient.patient_code)} · ` : ''}
-              {formatAge(patient.age)}
-              {patient.gender ? ` · ${patient.gender}` : ''}
-              {patient.blood_group ? ` · Blood: ${patient.blood_group}` : ''}
+              {[
+                patient.patient_code ? maskText(patient.patient_code) : null,
+                formatAge(patient.age),
+                patient.gender,
+                patient.blood_group ? `Blood: ${patient.blood_group}` : null,
+                patient.contact_phone ? `Phone: ${maskText(patient.contact_phone)}` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </p>
           </div>
           <div className="result-header-actions no-print">
@@ -312,10 +428,10 @@ export function ResultView({ response, onClose, onReanalyze }) {
             <button
               type="button"
               className="button secondary print-btn"
-              onClick={() => setShowAppointmentSheet(true)}
-              title="Doctor Appointment Summary Sheet with QR Code"
+              onClick={() => setShowChat(true)}
+              title="Ask AI health assistant questions about this report"
             >
-              <QrCode size={15} /> Appointment Sheet
+              <Sparkles size={15} /> Ask AI
             </button>
             <button
               type="button"
@@ -325,7 +441,7 @@ export function ResultView({ response, onClose, onReanalyze }) {
             >
               <Printer size={15} /> Print Report
             </button>
-            {response.report?.id && (
+            {response?.report?.id && (
               <a
                 className="button secondary print-btn"
                 href={`/api/reports/${response.report.id}/export/pdf`}
@@ -348,8 +464,11 @@ export function ResultView({ response, onClose, onReanalyze }) {
           </div>
           <div className="print-patient-meta">
             <div><strong>Patient Name:</strong> {maskText(patient.full_name || 'Patient Record')}</div>
-            <div><strong>Patient ID:</strong> {maskText(patient.patient_code || 'PAT-N/A')}</div>
-            <div><strong>Age / Gender:</strong> {formatAge(patient.age)} / {patient.gender || 'N/A'}</div>
+            {patient.patient_code && <div><strong>Patient ID:</strong> {maskText(patient.patient_code)}</div>}
+            {formatAge(patient.age) && <div><strong>Age:</strong> {formatAge(patient.age)}</div>}
+            {patient.gender && <div><strong>Gender:</strong> {patient.gender}</div>}
+            {patient.blood_group && <div><strong>Blood Group:</strong> {patient.blood_group}</div>}
+            {patient.contact_phone && <div><strong>Phone:</strong> {maskText(patient.contact_phone)}</div>}
             <div><strong>Date:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
           </div>
         </div>
@@ -613,28 +732,104 @@ export function ResultView({ response, onClose, onReanalyze }) {
 
         {/* Nutrition & Activity Guidance */}
         <div className="result-section">
-          <h3 className="section-heading"><ShieldCheck size={16} /> General Lifestyle Information (not a treatment plan)</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+            <h3 className="section-heading" style={{ margin: 0 }}>
+              <ShieldCheck size={16} /> General Lifestyle Information (not a treatment plan)
+            </h3>
+            {byConditionList.length > 0 && (
+              <div className="rec-mode-toggle no-print">
+                <button
+                  type="button"
+                  className={`rec-toggle-btn ${recViewMode === 'combined' ? 'active' : ''}`}
+                  onClick={() => setRecViewMode('combined')}
+                >
+                  Combined Overview
+                </button>
+                <button
+                  type="button"
+                  className={`rec-toggle-btn ${recViewMode === 'by_condition' ? 'active' : ''}`}
+                  onClick={() => setRecViewMode('by_condition')}
+                >
+                  By Flagged Condition &amp; Labs ({byConditionList.length})
+                </button>
+              </div>
+            )}
+          </div>
           {needsOcrReview ? (
             <div className="alert warning" role="status">
               Recommendations are paused until the report text is corrected and analyzed.
             </div>
           ) : (
             <>
-              <div className="recommend-grid">
-                <Recommendation title="Foods to Prioritize" values={foodsToEat} />
-                <Recommendation title="Foods to Limit" values={foodsToAvoid} />
-                <Recommendation title="Movement & Physical Activity" values={exercises} />
-              </div>
-              {precautions.length > 0 && (
-                <div className="precautions-box">
-                  <strong>Precautions & Care Notes:</strong>{' '}
-                  {precautions.map((p, idx) => (
-                    <span key={idx}>
-                      {idx > 0 && ' · '}
-                      {renderWithLinks(p)}
-                    </span>
+              {recViewMode === 'by_condition' && byConditionList.length > 0 ? (
+                <div className="condition-recs-grid">
+                  {byConditionList.map((cond, idx) => (
+                    <div key={idx} className="condition-rec-card">
+                      <div className="condition-rec-header">
+                        <h4>{cond.condition}</h4>
+                        {cond.source_flag && (
+                          <span className="condition-source-badge">{cond.source_flag}</span>
+                        )}
+                      </div>
+                      <div className="condition-rec-body">
+                        {cond.foods_to_eat?.length > 0 && (
+                          <div className="condition-rec-group">
+                            <span className="rec-group-label eat">Foods to Prioritize:</span>
+                            <ul>
+                              {cond.foods_to_eat.map((f, i) => (
+                                <li key={i}>{renderWithLinks(f)}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {cond.foods_to_avoid?.length > 0 && (
+                          <div className="condition-rec-group">
+                            <span className="rec-group-label avoid">Foods to Limit:</span>
+                            <ul>
+                              {cond.foods_to_avoid.map((f, i) => (
+                                <li key={i}>{renderWithLinks(f)}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {cond.recommended_exercise?.length > 0 && (
+                          <div className="condition-rec-group">
+                            <span className="rec-group-label exercise">Movement &amp; Physical Activity:</span>
+                            <ul>
+                              {cond.recommended_exercise.map((e, i) => (
+                                <li key={i}>{renderWithLinks(e)}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {cond.exercise_precautions && (
+                          <p className="condition-rec-note">
+                            <strong>Care Note:</strong> {renderWithLinks(cond.exercise_precautions)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
+              ) : (
+                <>
+                  <div className="recommend-grid">
+                    <Recommendation title="Foods to Prioritize" values={foodsToEat} />
+                    <Recommendation title="Foods to Limit" values={foodsToAvoid} />
+                    <Recommendation title="Movement & Physical Activity" values={exercises} />
+                  </div>
+                  {precautions.length > 0 && (
+                    <div className="precautions-box">
+                      <strong>Precautions & Care Notes:</strong>{' '}
+                      {precautions.map((p, idx) => (
+                        <span key={idx}>
+                          {idx > 0 && ' · '}
+                          {renderWithLinks(p)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
@@ -712,13 +907,13 @@ export function ResultView({ response, onClose, onReanalyze }) {
           <span>{translated.disclaimer || result.disclaimer || DISCLAIMER}</span>
         </footer>
 
-        {/* Doctor Appointment Summary Sheet Modal */}
-        {showAppointmentSheet && (
-          <AppointmentSummarySheet
-            response={response}
-            onClose={() => setShowAppointmentSheet(false)}
-          />
-        )}
+        {/* Interactive AI Health Clarity Assistant Modal */}
+        <HealthChatDrawer
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+          report={response.report || response.result || response}
+          patient={patient}
+        />
       </article>
     </div>
   );

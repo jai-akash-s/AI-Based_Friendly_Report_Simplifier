@@ -62,13 +62,62 @@ def lookup_recommendation(term: str):
     # Check common aliases
     aliases = {
         "diabetes": "diabetes mellitus",
+        "type 2 diabetes": "diabetes mellitus",
+        "type 1 diabetes": "diabetes mellitus",
+        "prediabetes": "glucose",
+        "blood sugar": "glucose",
+        "fasting blood sugar": "glucose",
+        "fbs": "glucose",
+        "postprandial blood sugar": "glucose",
+        "ppbs": "glucose",
+        "random blood sugar": "glucose",
+        "rbs": "glucose",
         "high blood pressure": "hypertension",
+        "bp": "hypertension",
+        "high bp": "hypertension",
         "cholesterol": "hyperlipidemia",
         "high cholesterol": "hyperlipidemia",
+        "total cholesterol": "hyperlipidemia",
+        "triglyceride": "triglycerides",
+        "tg": "triglycerides",
+        "hypertriglyceridemia": "triglycerides",
+        "uric acid": "uric acid",
+        "serum uric acid": "uric acid",
+        "hyperuricemia": "uric acid",
+        "gout": "uric acid",
+        "gouty arthritis": "uric acid",
+        "fatty liver": "fatty liver",
+        "nafld": "fatty liver",
+        "hepatic steatosis": "fatty liver",
+        "sgot": "fatty liver",
+        "sgpt": "fatty liver",
+        "alt": "fatty liver",
+        "ast": "fatty liver",
+        "liver enzymes": "fatty liver",
+        "vitamin d": "vitamin d",
+        "vit d": "vitamin d",
+        "vitamin d3": "vitamin d",
+        "25-hydroxy vitamin d": "vitamin d",
+        "vitamin b12": "vitamin b12",
+        "vit b12": "vitamin b12",
+        "cobalamin": "vitamin b12",
+        "gerd": "gerd",
+        "acid reflux": "gerd",
+        "heartburn": "gerd",
+        "gastric reflux": "gerd",
         "heart attack": "myocardial infarction",
         "kidney disease": "chronic kidney disease",
+        "ckd": "chronic kidney disease",
+        "renal failure": "chronic kidney disease",
+        "serum creatinine": "creatinine",
+        "bun": "chronic kidney disease",
+        "blood urea nitrogen": "chronic kidney disease",
         "low iron": "anemia",
+        "iron deficiency": "anemia",
+        "iron deficiency anemia": "anemia",
         "thyroid": "hypothyroidism",
+        "elevated tsh": "hypothyroidism",
+        "low tsh": "hyperthyroidism",
         "cold": "cold and fever",
         "fever": "cold and fever",
         "common cold": "cold and fever",
@@ -173,10 +222,15 @@ def _build_plain_language_summary(text: str, entities: list) -> str | None:
     return " ".join(summary_parts)
 
 
-def generate_recommendations(entities: list, text: str = "", use_ai_fallback: bool = True):
+def generate_recommendations(
+    entities: list,
+    text: str = "",
+    lab_results: list = None,
+    use_ai_fallback: bool = True,
+):
     """
     Generates personalized diet (food) and exercise recommendations based on
-    detected medical conditions and lab findings.
+    detected medical conditions and abnormal laboratory findings.
     """
     by_condition = []
     seen_conditions = set()
@@ -186,6 +240,7 @@ def generate_recommendations(entities: list, text: str = "", use_ai_fallback: bo
     all_exercise = []
     all_precautions = []
 
+    # 1. Disease / Symptom / Condition Entity Matches
     for ent in entities:
         term_clean = ent["text"].lower().strip()
         label = ent.get("label", "")
@@ -201,6 +256,7 @@ def generate_recommendations(entities: list, text: str = "", use_ai_fallback: bo
         if rec:
             cond_data = {
                 "condition": ent["text"].title(),
+                "source_flag": "Report Finding",
                 "foods_to_eat": rec.get("foods_to_eat", []),
                 "foods_to_avoid": rec.get("foods_to_avoid", []),
                 "recommended_exercise": rec.get("recommended_exercise", []),
@@ -213,7 +269,133 @@ def generate_recommendations(entities: list, text: str = "", use_ai_fallback: bo
             if rec.get("exercise_precautions"):
                 all_precautions.append(rec["exercise_precautions"])
 
-    # Cold & Fever contextual detection (from text keywords, or medication combinations)
+    # 2. Abnormal Lab Findings Integration (Flagged High / Low values)
+    if lab_results is None and text:
+        try:
+            from core.lab_extractor import extract_lab_results
+            lab_results = extract_lab_results(text)
+        except Exception:
+            lab_results = []
+
+    for lab in (lab_results or []):
+        status = str(lab.get("status") or "").capitalize()
+        if status not in {"High", "Low"}:
+            continue
+
+        name_lower = str(lab.get("test_name", "")).strip().lower()
+        target_key = None
+        condition_title = None
+
+        if any(g in name_lower for g in ["glucose", "sugar", "fbs", "rbs", "ppbs"]):
+            if status == "High":
+                target_key = "glucose"
+                condition_title = f"{lab.get('test_name')} (Elevated)"
+        elif "hba1c" in name_lower:
+            if status == "High":
+                target_key = "hba1c"
+                condition_title = "HbA1c (Elevated / Diabetes Risk)"
+        elif any(c in name_lower for c in ["cholesterol", "lipid"]):
+            if status == "High":
+                target_key = "hyperlipidemia"
+                condition_title = f"{lab.get('test_name')} (Elevated)"
+        elif "ldl" in name_lower:
+            if status == "High":
+                target_key = "ldl"
+                condition_title = "LDL Cholesterol (Elevated)"
+        elif "hdl" in name_lower:
+            if status == "Low":
+                target_key = "hdl"
+                condition_title = "HDL Cholesterol (Low)"
+        elif "triglyceride" in name_lower:
+            if status == "High":
+                target_key = "triglycerides"
+                condition_title = "Triglycerides (Elevated)"
+        elif "uric acid" in name_lower:
+            if status == "High":
+                target_key = "uric acid"
+                condition_title = "Serum Uric Acid (Elevated / Gout Risk)"
+        elif any(h in name_lower for h in ["hemoglobin", "haemoglobin"]):
+            if status == "Low":
+                target_key = "anemia"
+                condition_title = "Hemoglobin (Low / Anemia)"
+        elif "creatinine" in name_lower:
+            if status == "High":
+                target_key = "creatinine"
+                condition_title = "Serum Creatinine (Elevated)"
+        elif any(k in name_lower for k in ["bun", "urea"]):
+            if status == "High":
+                target_key = "chronic kidney disease"
+                condition_title = "Blood Urea / Renal Marker (Elevated)"
+        elif "tsh" in name_lower:
+            if status == "High":
+                target_key = "tsh"
+                condition_title = "TSH (Elevated / Hypothyroid Trend)"
+            elif status == "Low":
+                target_key = "hyperthyroidism"
+                condition_title = "TSH (Low / Hyperthyroid Trend)"
+        elif "bilirubin" in name_lower:
+            if status == "High":
+                target_key = "bilirubin"
+                condition_title = "Bilirubin (Elevated)"
+        elif any(l in name_lower for l in ["sgot", "sgpt", "alt", "ast"]):
+            if status == "High":
+                target_key = "fatty liver"
+                condition_title = f"{lab.get('test_name')} (Elevated Liver Enzyme)"
+        elif "platelet" in name_lower:
+            if status == "Low":
+                target_key = "platelet count"
+                condition_title = "Platelet Count (Low)"
+        elif "wbc" in name_lower or "white blood cell" in name_lower:
+            target_key = "wbc count"
+            condition_title = f"WBC Count ({status})"
+        elif any(e in name_lower for e in ["esr", "crp"]):
+            if status == "High":
+                target_key = "esr"
+                condition_title = f"{lab.get('test_name')} (Elevated Inflammation)"
+
+        if target_key and target_key not in seen_conditions:
+            rec = lookup_recommendation(target_key)
+            if rec:
+                seen_conditions.add(target_key)
+                cond_data = {
+                    "condition": condition_title or target_key.title(),
+                    "source_flag": f"{lab.get('test_name')}: {lab.get('value')} {lab.get('unit') or ''} ({status})",
+                    "foods_to_eat": rec.get("foods_to_eat", []),
+                    "foods_to_avoid": rec.get("foods_to_avoid", []),
+                    "recommended_exercise": rec.get("recommended_exercise", []),
+                    "exercise_precautions": rec.get("exercise_precautions", "")
+                }
+                by_condition.append(cond_data)
+                all_eat.extend(rec.get("foods_to_eat", []))
+                all_avoid.extend(rec.get("foods_to_avoid", []))
+                all_exercise.extend(rec.get("recommended_exercise", []))
+                if rec.get("exercise_precautions"):
+                    all_precautions.append(rec["exercise_precautions"])
+
+    # 3. Blood Pressure in Text Detection
+    bp_match = re.search(r"\bBP\s*[:=\-]?\s*(\d{2,3})\s*/\s*(\d{2,3})\b", text, re.IGNORECASE)
+    if bp_match and "hypertension" not in seen_conditions and not any("hypertension" in c for c in seen_conditions):
+        sys_bp, dia_bp = int(bp_match.group(1)), int(bp_match.group(2))
+        if sys_bp >= 130 or dia_bp >= 85:
+            rec = lookup_recommendation("hypertension")
+            if rec:
+                seen_conditions.add("hypertension")
+                cond_data = {
+                    "condition": f"Blood Pressure ({sys_bp}/{dia_bp} mmHg Elevated)",
+                    "source_flag": f"BP {sys_bp}/{dia_bp} mmHg",
+                    "foods_to_eat": rec.get("foods_to_eat", []),
+                    "foods_to_avoid": rec.get("foods_to_avoid", []),
+                    "recommended_exercise": rec.get("recommended_exercise", []),
+                    "exercise_precautions": rec.get("exercise_precautions", "")
+                }
+                by_condition.append(cond_data)
+                all_eat.extend(rec.get("foods_to_eat", []))
+                all_avoid.extend(rec.get("foods_to_avoid", []))
+                all_exercise.extend(rec.get("recommended_exercise", []))
+                if rec.get("exercise_precautions"):
+                    all_precautions.append(rec["exercise_precautions"])
+
+    # 4. Cold & Fever contextual detection (from text keywords, or medication combinations)
     has_cold_fever_text = bool(re.search(r"\b(cold\s*(?:and|&)?\s*fever|cold|fever|cough|flu|pyrexia|coryza)\b", text, re.IGNORECASE))
 
     t_lower = text.lower()
@@ -227,6 +409,7 @@ def generate_recommendations(entities: list, text: str = "", use_ai_fallback: bo
             seen_conditions.add("cold and fever")
             cond_data = {
                 "condition": "Cold and Fever",
+                "source_flag": "Symptom / Medication Match",
                 "foods_to_eat": rec.get("foods_to_eat", []),
                 "foods_to_avoid": rec.get("foods_to_avoid", []),
                 "recommended_exercise": rec.get("recommended_exercise", []),

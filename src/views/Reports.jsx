@@ -95,7 +95,7 @@ export function Reports() {
           },
         },
       },
-      patient: { full_name: report.filename ? `Report: ${report.filename}` : 'Patient Report' },
+      patient: report.patient || null,
       report,
     });
   };
@@ -241,10 +241,10 @@ export function Reports() {
                 </div>
                 <div className="history-actions">
                   <button type="button" className="button secondary small" onClick={() => openReport(report)} title="View & Print Report">
-                    <Printer size={15} /> View & Print
+                    <Printer size={15} /> View &amp; Print
                   </button>
-                  <a href={`#/patients/${report.patient_id}`} title="View patient"><UserRound size={17} /></a>
-                  {report.file_path && <a href={`/reports/${report.id}/download`} title="Download"><Download size={17} /></a>}
+                  {report.patient_id && <a href={`#/patients/${report.patient_id}`} title="View patient"><UserRound size={17} /></a>}
+                  {report.file_path && <a href={`/reports/${report.id}/download`} title="Download original file"><Download size={17} /></a>}
                 </div>
               </article>
             ))}

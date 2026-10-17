@@ -1,18 +1,17 @@
-# AI-Based Friendly Report Simplifier
+﻿# AI-Based Friendly Report Simplifier
 
 An AI-assisted Flask and React application that extracts text from medical reports, identifies common medical terms and laboratory results, and presents cautious, plain-language explanations. It is an educational aid, not a diagnostic or treatment service.
 
 ## Features
 
 - Upload PDF, image, or text-based medical reports.
-- Extract patient details and medical entities.
+- Extract and display patient details — name, age, blood group, and contact phone — directly from linked patient records or from embedded report text when no patient is linked.
 - Explain the general uses of recognized medicines using a local generic/brand catalog, with fuzzy matches clearly marked for confirmation.
 - Allow patients to correct an OCR'd medicine name and rerun its lookup.
 - Detect multi-drug combinations and highlight potential drug interactions with doctor discussion prompts.
 - Parse common laboratory values (including Hemoglobin, WBC, RBC, Platelets, Glucose, Cholesterol, LDL, HDL, Creatinine, TSH, and HbA1c) using report ranges when present and a bundled adult reference catalog otherwise.
 - Differentiate High (amber/orange) vs. Low (cyan/blue) vs. Critical (crimson) vs. Normal (emerald green) lab metrics with exact-color print styling.
 - Visualize numeric lab results with interactive, color-zoned reference range gauge bars.
-- Generate a Doctor Appointment Summary Sheet with a mobile-scannable QR code directing to a responsive digital summary (`/reports/<id>/summary`).
 - Store structured laboratory results with each SQLite report; the existing startup migration safely adds missing columns to databases created by earlier versions.
 - Review lab statuses, glossary explanations, the original report text, and a simplified explanation side by side.
 - Generate questions for a doctor from abnormal low/high results.
@@ -20,32 +19,38 @@ An AI-assisted Flask and React application that extracts text from medical repor
 - Select English, Tamil, or Hindi generated output. Tamil/Hindi translation uses the configured Gemini service; the original report text is not sent by the translation endpoint.
 - Read the simplified summary aloud with the browser's Web Speech API and variable playback speeds.
 - Show a safety disclaimer on report results and exports; generated summaries avoid confirming diagnoses or prescribing treatment.
+- View **Nutrition & Activity Guidance** in two modes — a Combined Overview across all findings, or a per-condition breakdown with labeled foods to eat, foods to limit, exercise recommendations, and care notes.
 - Evaluate Flesch Reading Ease and Flesch-Kincaid grade, and measure lab extraction against a small labeled sample set.
 - Delete individual patient records with cascading deletion of uploaded files, reports, and reminders.
 - Delete a report or an entire signed-in account, including related database rows and uploaded report files.
 - Mask a patient's name and ID in the displayed and printed result view.
-- Download a formatted PDF report.
+- Download a formatted PDF, plain-text (.txt), DOCX, or JSON export of any simplified report.
 - Sign in locally or with Google OAuth; store patients and reports separately for each account.
 - **Role-Based Access Control**:
   - Superadmin account automatically designated for **`akash.saravanan1797@gmail.com`** (protected from demotion/deletion).
   - All other registered accounts default to standard **`user`** roles with self-contained patient and report data isolation.
   - Dedicated **Admin Portal** (`#/admin`) for system administrators to view real-time platform statistics, promote/demote user permissions, audit system events, and purge inactive user accounts.
   - Non-admin users attempting to access administrative endpoints or views receive 403 access control barriers.
-- **BytsOne-Inspired Modern Dashboard**:
-  - Left navigation sidebar featuring brand styling, categorized navigation groups (Overview, Learning, Management), and active status indicators.
-  - Top header bar with hamburger drawer toggle, theme switch, role badges (`Admin` vs. `User`), and initial avatar badges (`JA` / `AS`).
-  - Welcome Banner with dynamic user personalization, activity subtext, and quick action buttons.
-  - Middle 2-column layout: 2x2 **Assessment Activity** grid (`TESTS ASSIGNED`, `TESTS COMPLETED`, `QUESTIONS ATTEMPTED`, `TOTAL TIME SPENT`) and **Announcements** empty state.
-  - Progress section: **Courses in Progress** / active reports card and **Global Platform Profiles** integration.
-  - Interactive bottom-right **Floating AI Assistant** widget.
+- **Interactive AI Health Clarification Chatbot**: Floating assistant and report view drawer powered by Google Gemini (or offline fallback) allowing patients to ask clarifying questions grounded strictly in their lab results, recognized medications, and dietary guidelines, protected by clinical safety guardrails.
+- **Enhanced Image Preprocessing for Degraded Scans**: Automated horizontal projection deskewing, illumination normalization and shadow removal via Gaussian background division, and dynamic adaptive contrast scaling in `core/extractor.py`.
+- **Comprehensive Automated Testing**: Complete Vitest + React Testing Library component test suite alongside Python `unittest` regression tests.
+- **Production Docker & Compose Deployment**: Multi-stage `Dockerfile` with Node Vite builder and Python 3.12 Gunicorn server with Tesseract OCR, complete with `docker-compose.yml`.
+
+## What Was Removed
+
+The following features were intentionally removed to keep the application focused:
+
+- **Appointment Sheet / QR code generation** — the in-browser appointment card modal and associated QR code generation have been removed.
+- **CSV & FHIR exports** — bulk CSV download and FHIR-formatted export endpoints are no longer available. PDF, DOCX, TXT, and JSON remain supported.
+- **Email digest UI** — the "Send Digest" button in the Reminders view has been removed from the interface. The backend `/api/reminders/send-digest` endpoint remains available for programmatic use.
 
 ## Project structure
 
 - `app.py`: Flask application setup, blueprint registration, and startup SQLite schema checks.
 - `routes/`: authentication, upload, patient, report, evaluation, translation, trend, deletion, and export endpoints.
-- `database/models.py`: SQLAlchemy user, patient, report, medicine catalog/cache, entity, and recommendation models.
+- `database/models.py`: SQLAlchemy user, patient, report, medicine catalog/cache, entity, recommendation, reminder, and audit log models.
 - `core/`: OCR, extraction, entity recognition, simplification, and Gemini report analysis.
-- `services/`: lab parsing, medicine lookup/explanation, trends, questions, safety, privacy, translation, evaluation, and PDF generation.
+- `services/`: lab parsing, medicine lookup/explanation, trends, questions, safety, privacy, translation, evaluation, PDF generation, AI chat, drug interactions, and doctor question generation.
 - `data/medicines.json`: bundled generic medicine names, general-use explanations, and selected brand aliases.
 - `database/import_medicine_csv.py`: importer for Kaggle-style medicine CSV files.
 - `src/`: active project-root React/Vite application.
@@ -109,17 +114,57 @@ The raw Kaggle dataset is staged at `data/kaggle/A_Z_medicines_dataset_of_India.
 | `DELETE` | `/api/patients/<patient_id>` / `/patients/api/<patient_id>` | Delete a patient, cascading to all owned reports, uploaded files, and reminders. |
 | `GET` | `/api/patients/<patient_id>/timeline` | Retrieve chronological report timeline and trajectory for a patient. |
 | `GET` | `/api/patients/<patient_id>/lab-trends?test=Hemoglobin` | Return one owned patient's values for a test, in report-date order. |
-| `GET` | `/reports/<report_id>/summary` | Public, responsive mobile summary view for doctor visit QR code scans. |
+| `GET` | `/reports/<report_id>/summary` | Public, responsive mobile summary view for doctor visit reference. |
 | `GET` | `/api/reports/<report_id>/evaluation` | Return readability metrics for the report and labeled lab-extraction metrics. |
 | `POST` | `/api/reports/<report_id>/translate` | Translate generated output; JSON body: `{"language":"ta"}` or `{"language":"hi"}`. `en` returns English output. |
 | `POST` | `/api/reports/<report_id>/medicine-lookup` | Rerun an owned medicine entity lookup after correction; JSON body: `{"entity_id":1,"name":"corrected name"}`. |
+| `POST` | `/api/reports/<report_id>/chat` | Interactive health clarity chatbot grounded on report lab results, medications, and diet. |
+| `POST` | `/api/chat` | Interactive health assistant conversational endpoint. |
 | `GET` | `/api/reports/<report_id>/export/pdf` | Download a simplified report PDF. |
+| `GET` | `/api/reports/<report_id>/export/docx` | Download a simplified report as a DOCX document. |
+| `GET` | `/api/reports/<report_id>/export/txt` | Download a simplified report as plain text. |
+| `GET` | `/api/reports/<report_id>/export/json` | Download report data as JSON. |
+| `POST` | `/api/reminders/send-digest` | Dispatch automated clinical email digest of upcoming follow-ups (programmatic use). |
+| `POST` | `/api/reminders/<reminder_id>/send-alert` | Dispatch single clinical reminder alert to patient email. |
+| `GET` | `/api/reminders/notification-status` | Check email delivery service configuration and availability. |
+| `GET` | `/api/network-host` | Detect host LAN IP address for cross-device mobile resolution. |
 | `DELETE` | `/api/reports/<report_id>` | Delete an owned report, its dependent rows, and its uploaded file. |
 | `DELETE` | `/api/account` | Delete the signed-in account and its related reports, patients, audit rows, and report files. |
 
-All listed endpoints require an authenticated session (except the public QR `/reports/<report_id>/summary` designed for mobile clinician visits). Normal CSRF configuration also applies to deletion, mutation, translation, and medicine lookup requests.
+All listed endpoints require an authenticated session (except the public `/reports/<report_id>/summary` and `/api/network-host`). Normal CSRF configuration also applies to mutation, chat, translation, and export requests.
+
+## Docker Deployment
+
+To launch the complete application with Docker and Docker Compose:
+
+```bash
+# Build and start the container in the background
+docker compose up -d --build
+
+# View container logs
+docker compose logs -f
+
+# Check health
+curl http://localhost:5000/health
+```
+
+The container automatically builds the Vite React frontend into production assets, compiles Tesseract OCR, binds SQLite and upload storage to persistent Docker volumes (`medreport_data` and `medreport_uploads`), and runs Gunicorn WSGI on port 5000.
 
 ## Run tests
+
+### Frontend Unit & Component Tests (Vitest)
+
+```powershell
+npm test
+```
+
+To run TypeScript verification:
+
+```powershell
+npm run lint
+```
+
+### Backend Unit Tests (Python unittest)
 
 ```powershell
 cd "d:\AI-Based_Friendly_Report_Simplifier-main"
@@ -132,6 +177,13 @@ Run just the medicine lookup tests:
 ```powershell
 python -m unittest discover -s tests -p "test_medicine_lookup.py" -v
 ```
+
+Run the new features export, chat, and notification tests:
+
+```powershell
+python -m unittest discover -s tests -p "test_features_export_chat_notify.py" -v
+```
+
 
 Run the evaluation script against its checked-in labeled lab samples:
 

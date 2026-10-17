@@ -191,6 +191,7 @@ class MedicalReport(db.Model):
         return {
             "id": self.id,
             "patient_id": self.patient_id,
+            "patient": self.patient.to_dict() if self.patient else None,
             "title": self.title,
             "lab_results": lab_results,
             "medicine_results": medicine_results,

@@ -144,6 +144,45 @@ def build_simplified_report_pdf(data):
             story.append(Paragraph(f"<b>{term}</b>: {explanation}", body_style))
             story.append(Spacer(1, 4))
 
+    recs = data.get("recommendations") or []
+    foods_to_eat = []
+    foods_to_avoid = []
+    recommended_exercise = []
+    precautions = []
+    if isinstance(recs, dict):
+        agg = recs.get("aggregated") or {}
+        foods_to_eat = agg.get("foods_to_eat") or []
+        foods_to_avoid = agg.get("foods_to_avoid") or []
+        recommended_exercise = agg.get("recommended_exercise") or []
+        precautions = agg.get("general_precautions") or []
+    elif isinstance(recs, list):
+        for item in recs:
+            if isinstance(item, dict):
+                foods_to_eat.extend(item.get("foods_to_eat") or [])
+                foods_to_avoid.extend(item.get("foods_to_avoid") or [])
+                recommended_exercise.extend(item.get("recommended_exercise") or [])
+                if item.get("exercise_precautions"):
+                    precautions.append(item["exercise_precautions"])
+        foods_to_eat = list(dict.fromkeys(foods_to_eat))
+        foods_to_avoid = list(dict.fromkeys(foods_to_avoid))
+        recommended_exercise = list(dict.fromkeys(recommended_exercise))
+        precautions = list(dict.fromkeys(precautions))
+
+    if foods_to_eat or foods_to_avoid or recommended_exercise:
+        story.append(Paragraph("Lifestyle & Wellness Guidance (Educational)", section_style))
+        if foods_to_eat:
+            story.append(Paragraph("<b>Foods to Prioritize:</b> " + escape(", ".join(str(f) for f in foods_to_eat[:6])), body_style))
+            story.append(Spacer(1, 3))
+        if foods_to_avoid:
+            story.append(Paragraph("<b>Foods to Limit:</b> " + escape(", ".join(str(f) for f in foods_to_avoid[:6])), body_style))
+            story.append(Spacer(1, 3))
+        if recommended_exercise:
+            story.append(Paragraph("<b>Movement & Physical Activity:</b> " + escape(", ".join(str(e) for e in recommended_exercise[:4])), body_style))
+            story.append(Spacer(1, 3))
+        if precautions:
+            story.append(Paragraph("<b>Precautions:</b> " + escape(" · ".join(str(p) for p in precautions[:3])), body_style))
+            story.append(Spacer(1, 4))
+
     questions = data.get("questions_to_ask_doctor") or []
     if questions:
         story.append(Paragraph("Questions to ask your doctor", section_style))

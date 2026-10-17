@@ -397,6 +397,124 @@
       ],
       "exercise_precautions": "Do not overexert during acute inflammation flare-ups."
     },
+    "glucose": {
+      "foods_to_eat": [
+        "Non-starchy vegetables (spinach, broccoli, cauliflower, bell peppers) to help stabilize glucose",
+        "High-fiber complex carbohydrates (steel-cut oats, quinoa, lentils, chickpeas)",
+        "Lean proteins (skinless poultry, wild fish, tofu, eggs) to promote prolonged satiety",
+        "Healthy fats and seeds (chia seeds, ground flaxseeds, raw almonds, avocado)"
+      ],
+      "foods_to_avoid": [
+        "Sugar-sweetened beverages (sodas, sweetened iced teas, fruit juice concentrates)",
+        "Refined carbohydrates (white bread, bakery sweets, refined breakfast cereals)",
+        "Ultra-processed snacks with hidden high-fructose corn syrup"
+      ],
+      "recommended_exercise": [
+        "10 to 15-minute gentle walk immediately after meals to stimulate muscular glucose uptake",
+        "150 minutes per week of moderate aerobic activity (brisk walking, cycling, or swimming)",
+        "Light resistance or bodyweight training 2 times a week to improve insulin sensitivity"
+      ],
+      "exercise_precautions": "Stay well-hydrated. If taking blood sugar-lowering medications, be aware of hypoglycemic symptoms and carry a fast-acting carbohydrate."
+    },
+    "uric acid": {
+      "foods_to_eat": [
+        "Plentiful hydration (drink at least 2.5 to 3 liters of water daily to support kidney uric acid excretion)",
+        "Low-fat or skim milk and yogurt (dairy proteins help accelerate uric acid clearance)",
+        "Tart cherries or fresh berries (contain anthocyanins that help reduce uric acid levels)",
+        "Vitamin C-rich fruits and vegetables (oranges, kiwi, bell peppers)",
+        "Plant proteins like tofu, lentils, and beans in place of red meat"
+      ],
+      "foods_to_avoid": [
+        "High-purine animal meats (organ meats like liver/kidneys, beef, lamb, pork)",
+        "Purine-dense seafood (anchovies, sardines, mussels, scallops, tuna)",
+        "Alcoholic beverages, particularly beer (high purine & brewer's yeast) and hard liquor",
+        "Sodas and processed foods sweetened with high-fructose corn syrup"
+      ],
+      "recommended_exercise": [
+        "Low-impact non-weight-bearing exercises (swimming, stationary cycling, gentle walking) to keep joints mobile"
+      ],
+      "exercise_precautions": "During an acute gout or joint pain flare, completely rest the affected joint and avoid impact exercises until pain and inflammation subside."
+    },
+    "triglycerides": {
+      "foods_to_eat": [
+        "Fatty fish rich in Omega-3 fatty acids (salmon, mackerel, sardines) twice weekly",
+        "High-fiber whole grains (oats, barley) and legumes",
+        "Healthy unsaturated cooking oils (extra virgin olive oil, avocado oil)",
+        "Nuts like walnuts and almonds in moderate portion sizes"
+      ],
+      "foods_to_avoid": [
+        "Alcoholic beverages (even modest alcohol intake can substantially elevate triglyceride levels)",
+        "Added refined sugars, candy, pastries, and sweet desserts",
+        "Trans fats, hydrogenated shortening, and commercial fried foods"
+      ],
+      "recommended_exercise": [
+        "At least 30 minutes of moderate-to-brisk aerobic physical activity (brisk walking, jogging, lap swimming) 5 days a week"
+      ],
+      "exercise_precautions": "Consistency over weeks and months is key for metabolic triglyceride reduction."
+    },
+    "fatty liver": {
+      "foods_to_eat": [
+        "Mediterranean dietary pattern: plentiful leafy vegetables, legumes, olive oil, and nuts",
+        "Antioxidant-rich foods (berries, green tea, dark leafy greens)",
+        "Black or unsweetened coffee (compounds in coffee have been clinically shown to support liver enzyme health)",
+        "Lean, unprocessed proteins (fish, skinless chicken, plant proteins)"
+      ],
+      "foods_to_avoid": [
+        "Alcohol completely to relieve hepatic metabolic stress",
+        "High-fructose corn syrup, fruit juices, and table sugars",
+        "Deep-fried, ultra-processed, and high-saturated-fat convenience meals"
+      ],
+      "recommended_exercise": [
+        "150–200 minutes of moderate aerobic exercise per week combined with moderate resistance training"
+      ],
+      "exercise_precautions": "Aim for gradual, sustainable weight management (0.5 to 1 kg per week); avoid rapid crash starvation diets which can worsen hepatic inflammation."
+    },
+    "vitamin d": {
+      "foods_to_eat": [
+        "Fatty fish (wild salmon, trout, canned sardines)",
+        "Vitamin D-fortified milk, fortified plant milks, and fortified cereals",
+        "Egg yolks and UV-exposed mushrooms"
+      ],
+      "foods_to_avoid": [
+        "Excessive alcohol or extreme caffeine intake which can impair calcium/bone balance"
+      ],
+      "recommended_exercise": [
+        "Weight-bearing exercises (brisk walking, jogging, bodyweight squats, stair climbing) outdoors during safe sunlight hours to stimulate bone mineralization"
+      ],
+      "exercise_precautions": "Consult your physician for optimal Vitamin D3 supplementation dosage based on your specific lab result."
+    },
+    "vitamin b12": {
+      "foods_to_eat": [
+        "Dairy products (milk, yogurt, cottage cheese), eggs, and lean poultry",
+        "Fortified nutritional yeast and B12-fortified plant-based milks",
+        "Fish and seafood (salmon, trout, clams)"
+      ],
+      "foods_to_avoid": [
+        "Heavy alcohol consumption which interferes with stomach intrinsic factor and B12 absorption"
+      ],
+      "recommended_exercise": [
+        "Balance and neuromotor exercises (tai chi, yoga, tandem balance walks) to preserve nerve function and stability"
+      ],
+      "exercise_precautions": "Rest if feeling dizzy or uncoordinated; discuss oral or sublingual B12 supplementation with your clinician."
+    },
+    "gerd": {
+      "foods_to_eat": [
+        "Oatmeal and non-citrus fruits (bananas, melons, apples, pears)",
+        "Lean poultry (skinless chicken/turkey baked or grilled) and seafood",
+        "Green vegetables (asparagus, broccoli, green beans, celery, cucumbers)",
+        "Herbal teas such as chamomile or licorice root"
+      ],
+      "foods_to_avoid": [
+        "Citrus fruits (oranges, lemons, grapefruits) and tomato-based sauces",
+        "Chocolate, peppermint, and spearmint (relax the lower esophageal sphincter)",
+        "Caffeine, carbonated fizzy beverages, and alcohol",
+        "High-fat fried foods and eating within 3 hours of bedtime"
+      ],
+      "recommended_exercise": [
+        "Low-impact upright activities like walking or light stationary cycling"
+      ],
+      "exercise_precautions": "Avoid intense forward bending, inverted yoga poses, or vigorous abdominal crunches right after meals; stay upright for 2 to 3 hours after eating."
+    },
     "cold and fever": {
       "foods_to_eat": [
         "Drink hot water",

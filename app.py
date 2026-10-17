@@ -120,5 +120,22 @@ def request_too_large(error):
         return {"error": message}, 413
     return render_template("index.html", error=message), 413
 
+
+@app.errorhandler(404)
+def handle_404(error):
+    if request.path.startswith("/api/") or request.path.startswith("/auth/"):
+        return jsonify({"error": "Resource not found"}), 404
+    dist_path = app.config.get("FRONTEND_DIST")
+    if dist_path and os.path.isdir(dist_path):
+        relative_path = request.path.lstrip("/")
+        requested_file = os.path.join(dist_path, relative_path)
+        if os.path.isfile(requested_file):
+            return send_from_directory(dist_path, relative_path)
+        index_file = os.path.join(dist_path, "index.html")
+        if os.path.isfile(index_file):
+            return send_from_directory(dist_path, "index.html")
+    return jsonify({"error": "Resource not found"}), 404
+
+
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)

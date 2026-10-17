@@ -60,9 +60,13 @@ def extract_patient_info(text: str) -> dict[str, Any]:
         gender = "Male" if raw in {"male", "m"} else "Female" if raw in {"female", "f"} else raw.title()
 
     blood_group = None
-    blood_match = re.search(r"(?:blood\s*(?:group|type)|bld|bg)\s*[:\-]?\s*([A-Z]{1,3}[+-])", normalized, re.IGNORECASE)
+    blood_match = re.search(
+        r"(?:blood\s*(?:group|type)?|bld|bg)\s*[:\-]?\s*([ABO0][AB]?\s*(?:\+|\-|positive|negative|pos|neg)|[A-Z]{1,3}[+-])",
+        normalized,
+        re.IGNORECASE,
+    )
     if blood_match:
-        blood_group = blood_match.group(1).upper()
+        blood_group = blood_match.group(1).strip().upper()
 
     phone = None
     phone_match = re.search(r"(?:phone|mobile|contact)\s*[:\-]?\s*(\+?\d[\d\s().-]{7,}\d)", normalized, re.IGNORECASE)

@@ -21,12 +21,13 @@ and fall back to OCR for that page.
 
 from pathlib import Path
 import os
+import numpy as np
 
 import pymupdf as fitz  # PyMuPDF, used to rasterize PDF pages for OCR
 import pdfplumber
 import pytesseract
 from pytesseract.pytesseract import TesseractNotFoundError
-from PIL import Image, ImageEnhance, ImageOps
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
 # If a page has fewer than this many characters of extractable text,
 # we treat it as "scanned" and run OCR instead.
@@ -42,15 +43,80 @@ if configured_tesseract_cmd:
     pytesseract.pytesseract.tesseract_cmd = configured_tesseract_cmd
 
 
+def _deskew_image(image: Image.Image, max_angle: float = 12.0, step: float = 0.5) -> Image.Image:
+    """Deskews an image by finding the angle that maximizes horizontal projection profile variance."""
+    try:
+        w, h = image.size
+        search_scale = min(1.0, 600.0 / max(w, h))
+        small = image.resize((int(w * search_scale), int(h * search_scale)), Image.Resampling.BILINEAR)
+        arr = np.array(small, dtype=np.float32)
+
+        thresh = np.mean(arr)
+        binary = (arr < thresh).astype(np.float32)
+
+        best_angle = 0.0
+        best_variance = -1.0
+        angles = np.arange(-max_angle, max_angle + step, step)
+
+        for angle in angles:
+            if abs(angle) < 0.01:
+                rot = binary
+            else:
+                rot_img = Image.fromarray((binary * 255).astype(np.uint8)).rotate(
+                    float(angle), resample=Image.Resampling.NEAREST, fillcolor=0
+                )
+                rot = np.array(rot_img, dtype=np.float32) / 255.0
+
+            row_sums = np.sum(rot, axis=1)
+            variance = float(np.var(row_sums))
+            if variance > best_variance:
+                best_variance = variance
+                best_angle = float(angle)
+
+        if abs(best_angle) >= 0.5:
+            return image.rotate(best_angle, resample=Image.Resampling.BICUBIC, expand=False, fillcolor=255)
+    except Exception:
+        pass
+    return image
+
+
+def _remove_shadows_and_normalize(image: Image.Image) -> Image.Image:
+    """Flattens uneven illumination and camera shadows using background division."""
+    try:
+        bg = image.filter(ImageFilter.GaussianBlur(radius=30))
+        img_arr = np.array(image, dtype=np.float32)
+        bg_arr = np.array(bg, dtype=np.float32)
+
+        bg_arr[bg_arr < 1.0] = 1.0
+        normalized = (img_arr / bg_arr) * 255.0
+        normalized = np.clip(normalized, 0, 255).astype(np.uint8)
+        norm_img = Image.fromarray(normalized)
+        return ImageOps.autocontrast(norm_img, cutoff=1)
+    except Exception:
+        return ImageOps.autocontrast(image)
+
+
 def _prepare_ocr_image(image: Image.Image) -> Image.Image:
-    image = ImageOps.autocontrast(ImageOps.exif_transpose(image).convert("L"))
-    if image.width < 1200:
-        scale = min(3, 1200 / image.width)
+    """Multi-stage preprocessing pipeline: EXIF orient, shadow removal, deskewing, scaling, and contrast boost."""
+    # 1. EXIF orientation and grayscale conversion
+    image = ImageOps.exif_transpose(image).convert("L")
+
+    # 2. Shadow removal and background flattening
+    image = _remove_shadows_and_normalize(image)
+
+    # 3. Automatic deskewing
+    image = _deskew_image(image)
+
+    # 4. Target resolution scaling (at least 1400px wide for crisp OCR)
+    if image.width < 1400:
+        scale = min(5.0, 1400.0 / image.width)
         image = image.resize(
             (int(image.width * scale), int(image.height * scale)),
             Image.Resampling.LANCZOS,
         )
-    return ImageEnhance.Sharpness(image).enhance(1.5)
+
+    # 5. Sharpness enhancement for character definition
+    return ImageEnhance.Sharpness(image).enhance(1.6)
 
 
 def _run_ocr(image: Image.Image) -> tuple[str, int | None]:

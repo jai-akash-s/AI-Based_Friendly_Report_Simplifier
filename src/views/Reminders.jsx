@@ -15,7 +15,6 @@ export function Reminders({ session }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  // New reminder form fields
   const [newTitle, setNewTitle] = useState('');
   const [newDue, setNewDue] = useState('');
   const [newTag, setNewTag] = useState('warning');
@@ -489,3 +488,5 @@ export function Reminders({ session }) {
     </div>
   );
 }
+
+

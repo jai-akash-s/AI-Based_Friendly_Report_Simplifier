@@ -1,6 +1,7 @@
 import os
 import io
 import json
+import socket
 
 from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, send_file, url_for
 
@@ -18,6 +19,8 @@ from services.translation import (
 	TranslationProviderError,
 	translate_report_output,
 )
+from services.notifications import send_reminder_email, get_notification_config
+from services.ai_chat import generate_health_chat_reply
 
 report_bp = Blueprint("report", __name__)
 
@@ -445,23 +448,6 @@ def delete_report(report_id):
 	return redirect(url_for("report.list_reports"))
 
 
-@report_bp.route("/api/admin/audit-logs", methods=["GET"])
-@login_required
-@require_role("admin")
-def audit_logs():
-	from database.models import AuditLog
-	logs = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(200).all()
-	return jsonify([
-		{
-			"action": log.action,
-			"resource_type": log.resource_type,
-			"resource_id": log.resource_id,
-			"user_id": log.user_id,
-			"created_at": log.created_at.isoformat() if log.created_at else None,
-		}
-		for log in logs
-	])
-
 
 @report_bp.route("/api/admin/backup", methods=["GET"])
 @login_required
@@ -483,3 +469,92 @@ def restore_database():
 	db_path = os.path.join(current_app.config["BASE_DIR"], "database", "medreport.db")
 	backup.save(db_path)
 	return jsonify({"restored": True})
+
+
+
+@report_bp.route("/api/reports/<int:report_id>/chat", methods=["POST"])
+@report_bp.route("/api/chat", methods=["POST"])
+@login_required
+def report_chat(report_id=None):
+	user = get_current_user()
+	payload = request.get_json(silent=True) or {}
+	user_message = str(payload.get("message", "")).strip()
+	chat_history = payload.get("history", [])
+
+	target_report_id = report_id or payload.get("report_id")
+	report_data = {}
+	patient_data = None
+
+	if target_report_id:
+		report = MedicalReport.query.filter_by(id=target_report_id, owner_id=user.id).first()
+		if report:
+			report_data = report.to_dict()
+			patient_data = report.patient.to_dict() if report.patient else None
+
+	if not report_data and payload.get("report_context"):
+		report_data = payload.get("report_context")
+		patient_data = payload.get("patient_context")
+
+	response = generate_health_chat_reply(
+		user_message=user_message,
+		report_data=report_data,
+		patient_data=patient_data,
+		chat_history=chat_history,
+	)
+	return jsonify(response)
+
+
+@report_bp.route("/api/reminders/send-digest", methods=["POST"])
+@login_required
+def send_reminders_digest():
+	user = get_current_user()
+	reminders = Reminder.query.filter_by(owner_id=user.id, status="pending").order_by(Reminder.created_at.desc()).all()
+	if not reminders:
+		return jsonify({"status": "empty", "message": "No pending reminders to send.", "count": 0})
+
+	reminders_data = [r.to_dict() for r in reminders]
+	result = send_reminder_email(
+		recipient_email=user.email,
+		reminders=reminders_data,
+		user_name=user.display_name or user.email.split("@")[0].title(),
+	)
+	log_audit("reminder_digest_sent", "user", user.id)
+	return jsonify(result)
+
+
+@report_bp.route("/api/reminders/<int:reminder_id>/send-alert", methods=["POST"])
+@login_required
+def send_single_reminder_alert(reminder_id):
+	user = get_current_user()
+	reminder = Reminder.query.filter_by(id=reminder_id, owner_id=user.id).first_or_404()
+	result = send_reminder_email(
+		recipient_email=user.email,
+		reminders=[reminder.to_dict()],
+		user_name=user.display_name or user.email.split("@")[0].title(),
+	)
+	log_audit("single_reminder_alert_sent", "reminder", reminder.id)
+	return jsonify(result)
+
+
+@report_bp.route("/api/reminders/notification-status", methods=["GET"])
+@login_required
+def get_reminders_notification_status():
+	return jsonify(get_notification_config())
+
+
+@report_bp.route("/api/network-host", methods=["GET"])
+def get_network_host():
+	"""Returns the local network IP so mobile devices scanning QR codes can connect."""
+	lan_ip = None
+	try:
+		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		s.connect(("8.8.8.8", 80))
+		lan_ip = s.getsockname()[0]
+		s.close()
+	except Exception:
+		pass
+	public_base_url = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+	return jsonify({
+		"lan_ip": lan_ip or "127.0.0.1",
+		"public_base_url": public_base_url or None,
+	})

@@ -371,6 +371,7 @@ def upload():
             )
             rec_obj.set_list_field("foods_to_eat", cond.get("foods_to_eat", []))
             rec_obj.set_list_field("foods_to_avoid", cond.get("foods_to_avoid", []))
+            rec_obj.set_list_field("recommended_exercise", cond.get("recommended_exercise", []))
             db.session.add(rec_obj)
 
         # Auto-create patient follow-up reminders for abnormal findings or explicit checkups
