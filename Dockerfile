@@ -56,13 +56,12 @@ COPY database/ ./database/
 COPY routes/ ./routes/
 COPY services/ ./services/
 COPY templates/ ./templates/
-COPY static/ ./static/
 
 # Copy built frontend distribution from builder stage
 COPY --from=frontend-builder /app/dist ./dist
 
-# Create runtime directories for SQLite database and report file uploads
-RUN mkdir -p /app/database /app/uploads
+# Create runtime directories for SQLite database, report file uploads, and static assets
+RUN mkdir -p /app/database /app/uploads /app/static
 
 # Expose HTTP port
 EXPOSE 5000
