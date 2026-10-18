@@ -1,8 +1,22 @@
 let cachedCsrfToken = null;
 
+const API_BASE_URL = (
+  (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL)) ||
+  ''
+).replace(/\/$/, '');
+
+export const getApiUrl = (path = '') => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return API_BASE_URL ? `${API_BASE_URL}${cleanPath}` : cleanPath;
+};
+
 export const fetchCsrfToken = async () => {
   try {
-    const res = await fetch('/api/auth/csrf', { credentials: 'include' });
+    const res = await fetch(getApiUrl('/api/auth/csrf'), { credentials: 'include' });
     if (res.ok) {
       const data = await res.json();
       cachedCsrfToken = data.csrf_token || null;
@@ -27,7 +41,7 @@ export const api = async (path, options = {}) => {
     }
   }
 
-  const response = await fetch(path, {
+  const response = await fetch(getApiUrl(path), {
     credentials: 'include',
     ...options,
     headers,

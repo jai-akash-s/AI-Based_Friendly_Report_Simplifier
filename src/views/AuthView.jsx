@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, CircleAlert, ShieldCheck, Sparkles } from 'lucide-react';
-import { api, go } from '../api/client';
+import { api, getApiUrl, go } from '../api/client';
 import { GoogleIcon } from '../components/common/CommonUI';
 
 export function AuthView({ onAuthenticated }) {
@@ -67,7 +67,7 @@ export function AuthView({ onAuthenticated }) {
 
           {googleEnabled && (
             <>
-              <a className="button google-auth-button wide" href="/auth/google">
+              <a className="button google-auth-button wide" href={getApiUrl('/auth/google')}>
                 <GoogleIcon size={18} />
                 <span>Continue with Google</span>
               </a>

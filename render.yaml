@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: medical-report-backend
+    env: docker
+    dockerfilePath: ./Dockerfile.backend
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: SESSION_COOKIE_SAMESITE
+        value: "None"
+      - key: CORS_ORIGINS
+        value: "https://your-frontend.vercel.app,http://localhost:3000"
+      - key: FRONTEND_URL
+        value: "https://your-frontend.vercel.app"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false

@@ -12,17 +12,33 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "development-only-change-me")
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    SESSION_COOKIE_SAMESITE = os.environ.get(
+        "SESSION_COOKIE_SAMESITE",
+        "None" if os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true" else "Lax"
+    )
     CSRF_ENABLED = os.environ.get("CSRF_ENABLED", "true").lower() == "true"
+    CORS_ORIGINS = [
+        origin.strip()
+        for origin in os.environ.get(
+            "CORS_ORIGINS",
+            "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+        ).split(",")
+        if origin.strip()
+    ]
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
     }
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
+    _raw_db_url = os.environ.get(
         "DATABASE_URL",
         "sqlite:///" + os.path.join(BASE_DIR, "database", "medreport.db")
     )
+    # SQLAlchemy 1.4+ compatibility: postgres:// -> postgresql://
+    if _raw_db_url.startswith("postgres://"):
+        _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)
+
+    SQLALCHEMY_DATABASE_URI = _raw_db_url
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 

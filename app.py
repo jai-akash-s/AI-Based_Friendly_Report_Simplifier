@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, render_template, request, send_from_directory, session
+from flask_cors import CORS
 from config import Config
 from database.models import db
 from routes.upload_routes import upload_bp
@@ -14,11 +15,32 @@ from sqlalchemy import inspect, text
 
 app = Flask(__name__)
 app.config.from_object(Config)
-app.config["SERVER_INSTANCE_ID"] = secrets.token_hex(16)
+app.config["SERVER_INSTANCE_ID"] = os.environ.get("SERVER_INSTANCE_ID", Config.SECRET_KEY)
 root_dist = os.path.join(Config.BASE_DIR, "dist")
 root_public = os.path.join(Config.BASE_DIR, "public")
 app.config["FRONTEND_DIST"] = root_dist
+
+# Configure Cross-Origin Resource Sharing (CORS) for separate frontend deployments
+cors_origins = app.config.get("CORS_ORIGINS", [])
+if not cors_origins or "*" in cors_origins:
+    CORS(
+        app,
+        supports_credentials=True,
+        origins=r".*",
+        allow_headers=["Content-Type", "Authorization", "X-CSRF-Token"],
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    )
+else:
+    CORS(
+        app,
+        supports_credentials=True,
+        origins=cors_origins,
+        allow_headers=["Content-Type", "Authorization", "X-CSRF-Token"],
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    )
+
 init_oauth(app)
+
 
 
 @app.route("/assets/<path:filename>")

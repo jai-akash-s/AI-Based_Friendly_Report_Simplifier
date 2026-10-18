@@ -1,4 +1,4 @@
-﻿# AI-Based Friendly Report Simplifier
+# AI-Based Friendly Report Simplifier
 
 An AI-assisted Flask and React application that extracts text from medical reports, identifies common medical terms and laboratory results, and presents cautious, plain-language explanations. It is an educational aid, not a diagnostic or treatment service.
 
@@ -85,6 +85,14 @@ Open `http://127.0.0.1:3000`. `npm run dev` starts Flask on port 5000 and the Re
 Google sign-in uses the existing Authlib OAuth flow. In the root `.env`, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI=http://127.0.0.1:5000/auth/google/callback`; register that exact redirect URI in Google Cloud Console. After sign-in, the browser returns to port 3000. Keep credentials in `.env`, never `.env.example`.
 
 For handwritten image analysis, Tamil/Hindi translation, or lookup of a medicine not recognized locally, set `GEMINI_API_KEY` in the root `.env`. Medicine lookup sends the detected medicine name and any extracted medicine/condition context to Gemini; it does not send the full report. A model-derived medicine explanation is always labeled unverified and is never promoted to a verified catalog match. Translation sends generated summary/explanation strings, not the original report. Without the key, local OCR and the medicine catalog continue to work; unknown medicine names remain unidentified.
+
+## Separated Production Deployment (Vercel + Render)
+
+The project supports standalone separated deployment:
+- **Frontend on Vercel**: High-performance React 18 SPA configured with `vercel.json` rewrite routing and `VITE_API_URL` pointing to the backend.
+- **Backend on Render**: Python Flask WSGI service powered by Gunicorn and Tesseract OCR with `Dockerfile.backend`, `render.yaml` Blueprint, and full CORS / cross-site SameSite cookie authentication.
+
+See [DEPLOYMENT.md](file:///d:/AI-Based_Friendly_Report_Simplifier-main/DEPLOYMENT.md) for the complete step-by-step setup and environment configuration guide.
 
 ## Medicine catalog import
 
