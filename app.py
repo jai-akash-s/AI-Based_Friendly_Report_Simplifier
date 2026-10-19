@@ -70,26 +70,39 @@ db.init_app(app)
 def ensure_database_schema():
     db_dir = os.path.join(Config.BASE_DIR, "database")
     os.makedirs(db_dir, exist_ok=True)
-    db.create_all()
-    inspector = inspect(db.engine)
-    migrations = [
-        ("patients", "owner_id", "INTEGER"),
-        ("medical_reports", "owner_id", "INTEGER"),
-        ("medical_reports", "title", "VARCHAR(255)"),
-        ("medical_reports", "lab_results", "TEXT"),
-        ("medical_reports", "medicine_results", "TEXT"),
-        ("users", "password_hash", "VARCHAR(255)"),
-        ("users", "role", "VARCHAR(30)"),
-    ]
-    for table_name, column_name, column_type in migrations:
-        columns = {column["name"] for column in inspector.get_columns(table_name)}
-        if column_name not in columns:
-            db.session.execute(
-                text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
-            )
-    db.session.execute(text("UPDATE users SET role = 'admin' WHERE LOWER(email) = 'akash.saravanan1797@gmail.com'"))
-    db.session.execute(text("UPDATE users SET role = 'user' WHERE (role IS NULL OR role = 'patient') AND LOWER(email) != 'akash.saravanan1797@gmail.com'"))
-    db.session.commit()
+    try:
+        db.create_all()
+    except Exception as exc:
+        if "already exists" not in str(exc).lower():
+            app.logger.warning("Database schema creation notice: %s", exc)
+
+    try:
+        inspector = inspect(db.engine)
+        migrations = [
+            ("patients", "owner_id", "INTEGER"),
+            ("medical_reports", "owner_id", "INTEGER"),
+            ("medical_reports", "title", "VARCHAR(255)"),
+            ("medical_reports", "lab_results", "TEXT"),
+            ("medical_reports", "medicine_results", "TEXT"),
+            ("users", "password_hash", "VARCHAR(255)"),
+            ("users", "role", "VARCHAR(30)"),
+        ]
+        for table_name, column_name, column_type in migrations:
+            try:
+                columns = {column["name"] for column in inspector.get_columns(table_name)}
+                if column_name not in columns:
+                    db.session.execute(
+                        text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
+                    )
+            except Exception:
+                pass
+        db.session.execute(text("UPDATE users SET role = 'admin' WHERE LOWER(email) = 'akash.saravanan1797@gmail.com'"))
+        db.session.execute(text("UPDATE users SET role = 'user' WHERE (role IS NULL OR role = 'patient') AND LOWER(email) != 'akash.saravanan1797@gmail.com'"))
+        db.session.commit()
+    except Exception as err:
+        db.session.rollback()
+        app.logger.warning("Database migration non-fatal notice: %s", err)
+
 
 
 with app.app_context():

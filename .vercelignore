@@ -1,0 +1,20 @@
+# Ignore backend python files from Vercel frontend build
+requirements.txt
+app.py
+config.py
+core/
+database/
+routes/
+services/
+templates/
+data/
+.venv/
+Dockerfile*
+docker-compose.yml
+Procfile
+render.yaml
+tests/
+scripts/
+uploads/
+eng.traineddata
+server.ts
