@@ -10,7 +10,7 @@ services:
     environment:
       - SECRET_KEY=${SECRET_KEY:-medreport-production-secure-key-replace-me}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
       - CSRF_ENABLED=${CSRF_ENABLED:-true}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
