@@ -21,7 +21,16 @@ root_public = os.path.join(Config.BASE_DIR, "public")
 app.config["FRONTEND_DIST"] = root_dist
 
 # Configure Cross-Origin Resource Sharing (CORS) for separate frontend deployments
-cors_origins = app.config.get("CORS_ORIGINS", [])
+cors_origins = list(app.config.get("CORS_ORIGINS", []))
+allowed_origins = [
+    r"^https://.*\.vercel\.app$",
+    r"^http://localhost(:\d+)?$",
+    r"^http://127\.0\.0\.1(:\d+)?$",
+]
+for origin in cors_origins:
+    if origin and origin != "*" and "your-frontend" not in origin and origin not in allowed_origins:
+        allowed_origins.append(origin)
+
 if not cors_origins or "*" in cors_origins:
     CORS(
         app,
@@ -34,7 +43,7 @@ else:
     CORS(
         app,
         supports_credentials=True,
-        origins=cors_origins,
+        origins=allowed_origins,
         allow_headers=["Content-Type", "Authorization", "X-CSRF-Token"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     )

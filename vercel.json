@@ -6,6 +6,22 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://medical-report-backend-pf6y.onrender.com/api/:path*"
+    },
+    {
+      "source": "/patients/api/:path*",
+      "destination": "https://medical-report-backend-pf6y.onrender.com/patients/api/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "https://medical-report-backend-pf6y.onrender.com/auth/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://medical-report-backend-pf6y.onrender.com/health"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
