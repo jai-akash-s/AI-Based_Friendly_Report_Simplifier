@@ -28,6 +28,7 @@ class Config:
     ]
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
+        "pool_recycle": 300,
     }
 
     _raw_db_url = os.environ.get("DATABASE_URL", "").strip()
@@ -42,6 +43,12 @@ class Config:
     # SQLAlchemy 1.4+ compatibility: postgres:// -> postgresql://
     if _raw_db_url.startswith("postgres://"):
         _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)
+
+    # Supabase / cloud PostgreSQL SSL handling
+    if _raw_db_url.startswith("postgresql://"):
+        if "sslmode=" not in _raw_db_url and any(domain in _raw_db_url for domain in ("supabase", "neon", "render", "aws", "pooler")):
+            sep = "&" if "?" in _raw_db_url else "?"
+            _raw_db_url = f"{_raw_db_url}{sep}sslmode=require"
 
     SQLALCHEMY_DATABASE_URI = _raw_db_url
 

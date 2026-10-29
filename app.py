@@ -94,6 +94,7 @@ def ensure_database_schema():
 
     try:
         inspector = inspect(db.engine)
+        existing_tables = set(inspector.get_table_names())
         migrations = [
             ("patients", "owner_id", "INTEGER"),
             ("medical_reports", "owner_id", "INTEGER"),
@@ -104,17 +105,25 @@ def ensure_database_schema():
             ("users", "role", "VARCHAR(30)"),
         ]
         for table_name, column_name, column_type in migrations:
+            if table_name not in existing_tables:
+                continue
             try:
                 columns = {column["name"] for column in inspector.get_columns(table_name)}
                 if column_name not in columns:
                     db.session.execute(
                         text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
                     )
+                    db.session.commit()
             except Exception:
-                pass
-        db.session.execute(text("UPDATE users SET role = 'admin' WHERE LOWER(email) = 'akash.saravanan1797@gmail.com'"))
-        db.session.execute(text("UPDATE users SET role = 'user' WHERE (role IS NULL OR role = 'patient') AND LOWER(email) != 'akash.saravanan1797@gmail.com'"))
-        db.session.commit()
+                db.session.rollback()
+
+        if "users" in existing_tables:
+            try:
+                db.session.execute(text("UPDATE users SET role = 'admin' WHERE LOWER(email) = 'akash.saravanan1797@gmail.com'"))
+                db.session.execute(text("UPDATE users SET role = 'user' WHERE (role IS NULL OR role = 'patient') AND LOWER(email) != 'akash.saravanan1797@gmail.com'"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
     except Exception as err:
         db.session.rollback()
         app.logger.warning("Database migration non-fatal notice: %s", err)
