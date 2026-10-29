@@ -6,6 +6,31 @@ load_dotenv()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+def _build_database_uri() -> str:
+    raw_db_url = os.environ.get("DATABASE_URL", "").strip()
+    if not raw_db_url:
+        return "sqlite:///" + os.path.join(BASE_DIR, "database", "medreport.db").replace("\\", "/")
+
+    if raw_db_url.startswith("sqlite:///") and not raw_db_url.startswith("sqlite:////"):
+        subpath = raw_db_url.replace("sqlite:///", "", 1)
+        if not os.path.isabs(subpath) and ":" not in subpath[:2]:
+            abs_db_path = os.path.abspath(os.path.join(BASE_DIR, subpath)).replace("\\", "/")
+            raw_db_url = f"sqlite:///{abs_db_path}"
+
+    # SQLAlchemy 1.4+ compatibility: postgres:// -> postgresql://
+    if raw_db_url.startswith("postgres://"):
+        raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
+
+    # Supabase / cloud PostgreSQL SSL handling
+    if raw_db_url.startswith("postgresql://"):
+        cloud_domains = ("supabase", "neon", "render", "aws", "pooler")
+        if "sslmode=" not in raw_db_url and any(domain in raw_db_url for domain in cloud_domains):
+            sep = "&" if "?" in raw_db_url else "?"
+            raw_db_url = f"{raw_db_url}{sep}sslmode=require"
+
+    return raw_db_url
+
+
 class Config:
 
     BASE_DIR = BASE_DIR
@@ -31,26 +56,7 @@ class Config:
         "pool_recycle": 300,
     }
 
-    _raw_db_url = os.environ.get("DATABASE_URL", "").strip()
-    if not _raw_db_url:
-        _raw_db_url = "sqlite:///" + os.path.join(BASE_DIR, "database", "medreport.db").replace("\\", "/")
-    elif _raw_db_url.startswith("sqlite:///") and not _raw_db_url.startswith("sqlite:////"):
-        subpath = _raw_db_url.replace("sqlite:///", "", 1)
-        if not os.path.isabs(subpath) and ":" not in subpath[:2]:
-            abs_db_path = os.path.abspath(os.path.join(BASE_DIR, subpath)).replace("\\", "/")
-            _raw_db_url = f"sqlite:///{abs_db_path}"
-
-    # SQLAlchemy 1.4+ compatibility: postgres:// -> postgresql://
-    if _raw_db_url.startswith("postgres://"):
-        _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)
-
-    # Supabase / cloud PostgreSQL SSL handling
-    if _raw_db_url.startswith("postgresql://"):
-        if "sslmode=" not in _raw_db_url and any(domain in _raw_db_url for domain in ("supabase", "neon", "render", "aws", "pooler")):
-            sep = "&" if "?" in _raw_db_url else "?"
-            _raw_db_url = f"{_raw_db_url}{sep}sslmode=require"
-
-    SQLALCHEMY_DATABASE_URI = _raw_db_url
+    SQLALCHEMY_DATABASE_URI = _build_database_uri()
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
