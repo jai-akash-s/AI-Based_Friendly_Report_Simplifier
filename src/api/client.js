@@ -14,10 +14,17 @@ export const getApiUrl = (path = '') => {
   return API_BASE_URL ? `${API_BASE_URL}${cleanPath}` : cleanPath;
 };
 
+if (typeof window !== 'undefined' && !API_BASE_URL && window.location.hostname.endsWith('vercel.app')) {
+  console.warn(
+    '[MedReport] VITE_API_URL is not set! Vercel is only hosting frontend static files. Database operations require a running backend server (e.g. Render). Please set VITE_API_URL in your Vercel Project Settings.'
+  );
+}
+
 export const fetchCsrfToken = async () => {
   try {
     const res = await fetch(getApiUrl('/api/auth/csrf'), { credentials: 'include' });
-    if (res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && !contentType.includes('text/html')) {
       const data = await res.json();
       cachedCsrfToken = data.csrf_token || null;
       return cachedCsrfToken;
@@ -46,6 +53,13 @@ export const api = async (path, options = {}) => {
     ...options,
     headers,
   });
+
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    throw new Error(
+      'Backend server is unreachable or returned HTML. If running on Vercel, please set the VITE_API_URL environment variable to your backend server URL (e.g. on Render).'
+    );
+  }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
