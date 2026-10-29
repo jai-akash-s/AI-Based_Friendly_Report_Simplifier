@@ -30,10 +30,15 @@ class Config:
         "pool_pre_ping": True,
     }
 
-    _raw_db_url = os.environ.get(
-        "DATABASE_URL",
-        "sqlite:///" + os.path.join(BASE_DIR, "database", "medreport.db")
-    )
+    _raw_db_url = os.environ.get("DATABASE_URL", "").strip()
+    if not _raw_db_url:
+        _raw_db_url = "sqlite:///" + os.path.join(BASE_DIR, "database", "medreport.db").replace("\\", "/")
+    elif _raw_db_url.startswith("sqlite:///") and not _raw_db_url.startswith("sqlite:////"):
+        subpath = _raw_db_url.replace("sqlite:///", "", 1)
+        if not os.path.isabs(subpath) and ":" not in subpath[:2]:
+            abs_db_path = os.path.abspath(os.path.join(BASE_DIR, subpath)).replace("\\", "/")
+            _raw_db_url = f"sqlite:///{abs_db_path}"
+
     # SQLAlchemy 1.4+ compatibility: postgres:// -> postgresql://
     if _raw_db_url.startswith("postgres://"):
         _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)

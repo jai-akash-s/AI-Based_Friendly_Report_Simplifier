@@ -68,8 +68,24 @@ def frontend_logo_favicon():
 db.init_app(app)
 
 def ensure_database_schema():
-    db_dir = os.path.join(Config.BASE_DIR, "database")
-    os.makedirs(db_dir, exist_ok=True)
+    db_uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    if db_uri.startswith("sqlite:///"):
+        sqlite_file = db_uri.replace("sqlite:///", "", 1)
+        db_dir = os.path.dirname(sqlite_file)
+        if db_dir:
+            try:
+                os.makedirs(db_dir, mode=0o777, exist_ok=True)
+                os.chmod(db_dir, 0o777)
+            except Exception:
+                pass
+    else:
+        db_dir = os.path.join(Config.BASE_DIR, "database")
+        try:
+            os.makedirs(db_dir, mode=0o777, exist_ok=True)
+            os.chmod(db_dir, 0o777)
+        except Exception:
+            pass
+
     try:
         db.create_all()
     except Exception as exc:

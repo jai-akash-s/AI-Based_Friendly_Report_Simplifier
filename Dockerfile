@@ -61,7 +61,8 @@ COPY templates/ ./templates/
 COPY --from=frontend-builder /app/dist ./dist
 
 # Create runtime directories for SQLite database, report file uploads, and static assets
-RUN mkdir -p /app/database /app/uploads /app/static
+RUN mkdir -p /app/database /app/uploads /app/static && \
+    chmod -R 777 /app/database /app/uploads /app/static
 
 # Expose HTTP port
 EXPOSE 5000

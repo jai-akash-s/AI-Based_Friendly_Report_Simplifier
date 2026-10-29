@@ -103,33 +103,32 @@ def refresh_medicine_index() -> None:
             for generic_name, details in _BUNDLED_MEDICINE_CATALOG.items()
         }
     )
-    for entry in MedicineCatalogEntry.query.order_by(MedicineCatalogEntry.generic_name):
-        generic_name = clean_name(entry.generic_name)
-        if not generic_name:
-            continue
-        try:
-            brands = json.loads(entry.brands)
-        except (TypeError, json.JSONDecodeError):
-            raise ValueError(
-                f"Invalid brands JSON in medicines table for {entry.generic_name!r}."
-            ) from None
-        if not isinstance(brands, list) or not all(isinstance(brand, str) for brand in brands):
-            raise ValueError(
-                f"Invalid brands list in medicines table for {entry.generic_name!r}."
+    try:
+        for entry in MedicineCatalogEntry.query.order_by(MedicineCatalogEntry.generic_name):
+            generic_name = clean_name(entry.generic_name)
+            if not generic_name:
+                continue
+            try:
+                brands = json.loads(entry.brands)
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if not isinstance(brands, list) or not all(isinstance(brand, str) for brand in brands):
+                continue
+            details = MEDICINE_CATALOG.setdefault(
+                generic_name,
+                {
+                    "class": entry.drug_class,
+                    "use": entry.use,
+                    "brands": [],
+                },
             )
-        details = MEDICINE_CATALOG.setdefault(
-            generic_name,
-            {
-                "class": entry.drug_class,
-                "use": entry.use,
-                "brands": [],
-            },
-        )
-        known_brands = {brand.casefold() for brand in details.get("brands", [])}
-        for brand in brands:
-            if brand.casefold() not in known_brands:
-                details["brands"].append(brand)
-                known_brands.add(brand.casefold())
+            known_brands = {brand.casefold() for brand in details.get("brands", [])}
+            for brand in brands:
+                if brand.casefold() not in known_brands:
+                    details["brands"].append(brand)
+                    known_brands.add(brand.casefold())
+    except Exception:
+        pass
 
     global BRAND_INDEX, AMBIGUOUS_BRANDS
     BRAND_INDEX = build_brand_index(MEDICINE_CATALOG)
