@@ -17,12 +17,12 @@ def _build_database_uri() -> str:
             abs_db_path = os.path.abspath(os.path.join(BASE_DIR, subpath)).replace("\\", "/")
             raw_db_url = f"sqlite:///{abs_db_path}"
 
-    # SQLAlchemy 1.4+ compatibility: postgres:// -> postgresql://
+    # SQLAlchemy compatibility: postgres:// -> postgresql://
     if raw_db_url.startswith("postgres://"):
         raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
 
-    # Supabase / cloud PostgreSQL SSL handling
-    if raw_db_url.startswith("postgresql://"):
+    # Supabase / cloud PostgreSQL SSL handling for all PostgreSQL dialect schemes
+    if raw_db_url.startswith("postgresql://") or raw_db_url.startswith("postgresql+"):
         cloud_domains = ("supabase", "neon", "render", "aws", "pooler")
         if "sslmode=" not in raw_db_url and any(domain in raw_db_url for domain in cloud_domains):
             sep = "&" if "?" in raw_db_url else "?"
